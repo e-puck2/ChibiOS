@@ -91,6 +91,9 @@
 *****************************************************************************
 
 *** Next ***
+- NEW: Added analog watchdog functionality to STM32 ADCv2 driver.
+- NEW: Added a termination check to the shell.
+- NEW: Updated CMSIS to version 5.3.0.
 - NEW: Now chconf.h files have preprocessor checks around each definition,
        this allows to override settings from makefiles.
 - NEW: Added new functions to I/O queues: qSetLink()(backported to 18.2.2).
@@ -138,6 +141,17 @@
 - EX:  Updated LIS302DL to 1.1.0 (backported to 18.2.1).
 - EX:  Updated LPS25H to 1.1.0 (backported to 18.2.1).
 - EX:  Updated LSM303DLHC to 1.1.0 (backported to 18.2.1).
+- OTH: Fixed demos failing to compile (bug #961)(backported to 18.2.2).
+- HAL: Fixed issue in hal_queues (bug #960)(backported to 18.2.2).
+- HAL: Fixed incorrect state change in I2S driver (bug #959)(backported
+       to 18.2.2 and 17.6.5).
+- HAL: Fixed incorrect TCIE handling in STM32 serial drivers (bug #958)
+       (backported to 18.2.2 and 17.6.5).
+- HAL: Fixed invalid period calculation in STM32 GPT driver (bug #957)
+       (backported to 18.2.2 and 17.6.5).
+- HAL: Fixed missing USART7/8 definitions in STM32F0 HAL (bug #956)(backported
+       to 18.2.2).
+- LIB: Fixed heap allocation issue (bug #955)(backported to 18.2.2 and 17.6.5).
 - HAL: Fixed win32 simulator HAL broken because a typo (bug #954)(backported
        to 18.2.2).
 - HAL: Fixed race condition in STM32 ADCv3 driver (bug #953)(backported to
