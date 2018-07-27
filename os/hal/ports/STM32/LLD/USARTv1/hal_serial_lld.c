@@ -215,7 +215,7 @@ static void serve_interrupt(SerialDriver *sdp) {
     b = oqGetI(&sdp->oqueue);
     if (b < MSG_OK) {
       chnAddFlagsI(sdp, CHN_OUTPUT_EMPTY);
-      u->CR1 = cr1 & ~USART_CR1_TXEIE;
+      u->CR1 = (cr1 & ~USART_CR1_TXEIE) | USART_CR1_TCIE;
     }
     else
       u->DR = b;
@@ -237,7 +237,7 @@ static void serve_interrupt(SerialDriver *sdp) {
 static void notify1(io_queue_t *qp) {
 
   (void)qp;
-  USART1->CR1 |= USART_CR1_TXEIE | USART_CR1_TCIE;
+  USART1->CR1 |= USART_CR1_TXEIE;
 }
 #endif
 
@@ -245,7 +245,7 @@ static void notify1(io_queue_t *qp) {
 static void notify2(io_queue_t *qp) {
 
   (void)qp;
-  USART2->CR1 |= USART_CR1_TXEIE | USART_CR1_TCIE;
+  USART2->CR1 |= USART_CR1_TXEIE;
 }
 #endif
 
@@ -253,7 +253,7 @@ static void notify2(io_queue_t *qp) {
 static void notify3(io_queue_t *qp) {
 
   (void)qp;
-  USART3->CR1 |= USART_CR1_TXEIE | USART_CR1_TCIE;
+  USART3->CR1 |= USART_CR1_TXEIE;
 }
 #endif
 
@@ -261,7 +261,7 @@ static void notify3(io_queue_t *qp) {
 static void notify4(io_queue_t *qp) {
 
   (void)qp;
-  UART4->CR1 |= USART_CR1_TXEIE | USART_CR1_TCIE;
+  UART4->CR1 |= USART_CR1_TXEIE;
 }
 #endif
 
@@ -269,7 +269,7 @@ static void notify4(io_queue_t *qp) {
 static void notify5(io_queue_t *qp) {
 
   (void)qp;
-  UART5->CR1 |= USART_CR1_TXEIE | USART_CR1_TCIE;
+  UART5->CR1 |= USART_CR1_TXEIE;
 }
 #endif
 
@@ -277,7 +277,7 @@ static void notify5(io_queue_t *qp) {
 static void notify6(io_queue_t *qp) {
 
   (void)qp;
-  USART6->CR1 |= USART_CR1_TXEIE | USART_CR1_TCIE;
+  USART6->CR1 |= USART_CR1_TXEIE;
 }
 #endif
 
@@ -285,7 +285,7 @@ static void notify6(io_queue_t *qp) {
 static void notify7(io_queue_t *qp) {
 
   (void)qp;
-  UART7->CR1 |= USART_CR1_TXEIE | USART_CR1_TCIE;
+  UART7->CR1 |= USART_CR1_TXEIE;
 }
 #endif
 
@@ -293,7 +293,7 @@ static void notify7(io_queue_t *qp) {
 static void notify8(io_queue_t *qp) {
 
   (void)qp;
-  UART8->CR1 |= USART_CR1_TXEIE | USART_CR1_TCIE;
+  UART8->CR1 |= USART_CR1_TXEIE;
 }
 #endif
 
