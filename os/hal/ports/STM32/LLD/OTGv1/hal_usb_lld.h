@@ -505,6 +505,15 @@ struct USBDriver {
 #if defined(USB_DRIVER_EXT_FIELDS)
   USB_DRIVER_EXT_FIELDS
 #endif
+  /**
+   * @brief   Timeout used to read the buffer in the case we haven't received 
+   *          a ZLP frame
+   */
+  systime_t                     last_complete_frame_time[USB_MAX_ENDPOINTS + 1];
+  /**
+   * @brief   Size of the last OUT transaction in bytes
+   */
+  uint32_t                      last_rxsize[USB_MAX_ENDPOINTS + 1];
   /* End of the mandatory fields.*/
   /**
    * @brief   Pointer to the OTG peripheral associated to this driver.
