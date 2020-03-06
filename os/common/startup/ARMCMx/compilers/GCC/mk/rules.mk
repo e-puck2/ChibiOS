@@ -199,10 +199,10 @@ endif
 $(BUILDDIR)/$(PROJECT).elf: $(OBJS) $(LDSCRIPT)
 ifeq ($(USE_VERBOSE_COMPILE),yes)
 	@echo
-	$(LD) $(OBJS) $(LDFLAGS) $(LIBS) -o $@
+	$(LD) $(OBJS) $(LIBS) $(LDFLAGS) -o $@
 else
 	@echo Linking $@
-	@$(LD) $(OBJS) $(LDFLAGS) $(LIBS) -o $@
+	@$(LD) $(OBJS) $(LIBS) $(LDFLAGS) -o $@
 endif
 
 %.hex: %.elf
@@ -253,6 +253,16 @@ else
 endif
 
 lib: $(OBJS) $(BUILDDIR)/lib$(PROJECT).a
+
+make_libs:
+	for dir in $(ULIBDIR); do \
+        $(MAKE) -C $$dir; \
+    done
+
+clean_libs:
+	for dir in $(ULIBDIR); do \
+        $(MAKE) -C $$dir clean; \
+    done
 
 $(BUILDDIR)/lib$(PROJECT).a: $(OBJS)
 	@$(AR) -r $@ $^
