@@ -254,16 +254,6 @@ endif
 
 lib: $(OBJS) $(BUILDDIR)/lib$(PROJECT).a
 
-make_libs:
-	for dir in $(ULIBDIR); do \
-        $(MAKE) -C $$dir; \
-    done
-
-clean_libs:
-	for dir in $(ULIBDIR); do \
-        $(MAKE) -C $$dir clean; \
-    done
-
 $(BUILDDIR)/lib$(PROJECT).a: $(OBJS)
 	@$(AR) -r $@ $^
 	@echo
