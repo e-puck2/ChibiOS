@@ -1,5 +1,5 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2017 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,18 +21,18 @@
  * @file    oslib_test_sequence_002.c
  * @brief   Test Sequence 002 code.
  *
- * @page oslib_test_sequence_002 [2] Memory Pools
+ * @page oslib_test_sequence_002 [2] Mailboxes
  *
  * File: @ref oslib_test_sequence_002.c
  *
  * <h2>Description</h2>
  * This sequence tests the ChibiOS library functionalities related to
- * memory pools.
+ * mailboxes.
  *
  * <h2>Conditions</h2>
  * This sequence is only executed if the following preprocessor condition
  * evaluates to true:
- * - CH_CFG_USE_MEMPOOLS
+ * - CH_CFG_USE_MAILBOXES
  * .
  *
  * <h2>Test Cases</h2>
@@ -42,237 +42,373 @@
  * .
  */
 
-#if (CH_CFG_USE_MEMPOOLS) || defined(__DOXYGEN__)
+#if (CH_CFG_USE_MAILBOXES) || defined(__DOXYGEN__)
 
 /****************************************************************************
  * Shared code.
  ****************************************************************************/
 
-#define MEMORY_POOL_SIZE 4
+#define MB_SIZE 4
 
-static uint32_t objects[MEMORY_POOL_SIZE];
-static MEMORYPOOL_DECL(mp1, sizeof (uint32_t), PORT_NATURAL_ALIGN, NULL);
-
-#if CH_CFG_USE_SEMAPHORES
-static GUARDEDMEMORYPOOL_DECL(gmp1, sizeof (uint32_t), PORT_NATURAL_ALIGN);
-#endif
-
-static void *null_provider(size_t size, unsigned align) {
-
-  (void)size;
-  (void)align;
-
-  return NULL;
-}
+static msg_t mb_buffer[MB_SIZE];
+static MAILBOX_DECL(mb1, mb_buffer, MB_SIZE);
 
 /****************************************************************************
  * Test cases.
  ****************************************************************************/
 
 /**
- * @page oslib_test_002_001 [2.1] Loading and emptying a memory pool
+ * @page oslib_test_002_001 [2.1] Mailbox normal API, non-blocking tests
  *
  * <h2>Description</h2>
- * The memory pool functionality is tested by loading and emptying it,
- * all conditions are tested.
+ * The mailbox normal API is tested without triggering blocking
+ * conditions.
  *
  * <h2>Test Steps</h2>
- * - [2.1.1] Adding the objects to the pool using chPoolLoadArray().
- * - [2.1.2] Emptying the pool using chPoolAlloc().
- * - [2.1.3] Now must be empty.
- * - [2.1.4] Adding the objects to the pool using chPoolFree().
- * - [2.1.5] Emptying the pool using chPoolAlloc() again.
- * - [2.1.6] Now must be empty again.
- * - [2.1.7] Covering the case where a provider is unable to return
- *   more memory.
+ * - [2.1.1] Testing the mailbox size.
+ * - [2.1.2] Resetting the mailbox, conditions are checked, no errors
+ *   expected.
+ * - [2.1.3] Testing the behavior of API when the mailbox is in reset
+ *   state then return in active state.
+ * - [2.1.4] Filling the mailbox using chMBPostTimeout() and
+ *   chMBPostAheadTimeout() once, no errors expected.
+ * - [2.1.5] Testing intermediate conditions. Data pointers must be
+ *   aligned, semaphore counters are checked.
+ * - [2.1.6] Emptying the mailbox using chMBFetchTimeout(), no errors
+ *   expected.
+ * - [2.1.7] Posting and then fetching one more message, no errors
+ *   expected.
+ * - [2.1.8] Testing final conditions. Data pointers must be aligned to
+ *   buffer start, semaphore counters are checked.
  * .
  */
 
 static void oslib_test_002_001_setup(void) {
-  chPoolObjectInit(&mp1, sizeof (uint32_t), NULL);
+  chMBObjectInit(&mb1, mb_buffer, MB_SIZE);
+}
+
+static void oslib_test_002_001_teardown(void) {
+  chMBReset(&mb1);
 }
 
 static void oslib_test_002_001_execute(void) {
+  msg_t msg1, msg2;
   unsigned i;
 
-  /* [2.1.1] Adding the objects to the pool using chPoolLoadArray().*/
+  /* [2.1.1] Testing the mailbox size.*/
   test_set_step(1);
   {
-    chPoolLoadArray(&mp1, objects, MEMORY_POOL_SIZE);
+    test_assert_lock(chMBGetFreeCountI(&mb1) == MB_SIZE, "wrong size");
   }
+  test_end_step(1);
 
-  /* [2.1.2] Emptying the pool using chPoolAlloc().*/
+  /* [2.1.2] Resetting the mailbox, conditions are checked, no errors
+     expected.*/
   test_set_step(2);
   {
-    for (i = 0; i < MEMORY_POOL_SIZE; i++)
-      test_assert(chPoolAlloc(&mp1) != NULL, "list empty");
+    chMBReset(&mb1);
+    test_assert_lock(chMBGetFreeCountI(&mb1) == MB_SIZE, "not empty");
+    test_assert_lock(chMBGetUsedCountI(&mb1) == 0, "still full");
+    test_assert_lock(mb1.buffer == mb1.wrptr, "write pointer not aligned to base");
+    test_assert_lock(mb1.buffer == mb1.rdptr, "read pointer not aligned to base");
   }
+  test_end_step(2);
 
-  /* [2.1.3] Now must be empty.*/
+  /* [2.1.3] Testing the behavior of API when the mailbox is in reset
+     state then return in active state.*/
   test_set_step(3);
   {
-    test_assert(chPoolAlloc(&mp1) == NULL, "list not empty");
+    msg1 = chMBPostTimeout(&mb1, (msg_t)0, TIME_INFINITE);
+    test_assert(msg1 == MSG_RESET, "not in reset state");
+    msg1 = chMBPostAheadTimeout(&mb1, (msg_t)0, TIME_INFINITE);
+    test_assert(msg1 == MSG_RESET, "not in reset state");
+    msg1 = chMBFetchTimeout(&mb1, &msg2, TIME_INFINITE);
+    test_assert(msg1 == MSG_RESET, "not in reset state");
+    chMBResumeX(&mb1);
   }
+  test_end_step(3);
 
-  /* [2.1.4] Adding the objects to the pool using chPoolFree().*/
+  /* [2.1.4] Filling the mailbox using chMBPostTimeout() and
+     chMBPostAheadTimeout() once, no errors expected.*/
   test_set_step(4);
   {
-    for (i = 0; i < MEMORY_POOL_SIZE; i++)
-      chPoolFree(&mp1, &objects[i]);
+    for (i = 0; i < MB_SIZE - 1; i++) {
+      msg1 = chMBPostTimeout(&mb1, 'B' + i, TIME_INFINITE);
+      test_assert(msg1 == MSG_OK, "wrong wake-up message");
+    }
+    msg1 = chMBPostAheadTimeout(&mb1, 'A', TIME_INFINITE);
+    test_assert(msg1 == MSG_OK, "wrong wake-up message");
   }
+  test_end_step(4);
 
-  /* [2.1.5] Emptying the pool using chPoolAlloc() again.*/
+  /* [2.1.5] Testing intermediate conditions. Data pointers must be
+     aligned, semaphore counters are checked.*/
   test_set_step(5);
   {
-    for (i = 0; i < MEMORY_POOL_SIZE; i++)
-      test_assert(chPoolAlloc(&mp1) != NULL, "list empty");
+    test_assert_lock(chMBGetFreeCountI(&mb1) == 0, "still empty");
+    test_assert_lock(chMBGetUsedCountI(&mb1) == MB_SIZE, "not full");
+    test_assert_lock(mb1.rdptr == mb1.wrptr, "pointers not aligned");
   }
+  test_end_step(5);
 
-  /* [2.1.6] Now must be empty again.*/
+  /* [2.1.6] Emptying the mailbox using chMBFetchTimeout(), no errors
+     expected.*/
   test_set_step(6);
   {
-    test_assert(chPoolAlloc(&mp1) == NULL, "list not empty");
+    for (i = 0; i < MB_SIZE; i++) {
+      msg1 = chMBFetchTimeout(&mb1, &msg2, TIME_INFINITE);
+      test_assert(msg1 == MSG_OK, "wrong wake-up message");
+      test_emit_token(msg2);
+    }
+    test_assert_sequence("ABCD", "wrong get sequence");
   }
+  test_end_step(6);
 
-  /* [2.1.7] Covering the case where a provider is unable to return
-     more memory.*/
+  /* [2.1.7] Posting and then fetching one more message, no errors
+     expected.*/
   test_set_step(7);
   {
-    chPoolObjectInit(&mp1, sizeof (uint32_t), null_provider);
-    test_assert(chPoolAlloc(&mp1) == NULL, "provider returned memory");
+    msg1 = chMBPostTimeout(&mb1, 'B' + i, TIME_INFINITE);
+    test_assert(msg1 == MSG_OK, "wrong wake-up message");
+    msg1 = chMBFetchTimeout(&mb1, &msg2, TIME_INFINITE);
+    test_assert(msg1 == MSG_OK, "wrong wake-up message");
   }
+  test_end_step(7);
+
+  /* [2.1.8] Testing final conditions. Data pointers must be aligned to
+     buffer start, semaphore counters are checked.*/
+  test_set_step(8);
+  {
+    test_assert_lock(chMBGetFreeCountI(&mb1) == MB_SIZE, "not empty");
+    test_assert_lock(chMBGetUsedCountI(&mb1) == 0, "still full");
+    test_assert(mb1.buffer == mb1.wrptr, "write pointer not aligned to base");
+    test_assert(mb1.buffer == mb1.rdptr, "read pointer not aligned to base");
+  }
+  test_end_step(8);
 }
 
 static const testcase_t oslib_test_002_001 = {
-  "Loading and emptying a memory pool",
+  "Mailbox normal API, non-blocking tests",
   oslib_test_002_001_setup,
-  NULL,
+  oslib_test_002_001_teardown,
   oslib_test_002_001_execute
 };
 
-#if (CH_CFG_USE_SEMAPHORES) || defined(__DOXYGEN__)
 /**
- * @page oslib_test_002_002 [2.2] Loading and emptying a guarded memory pool without waiting
+ * @page oslib_test_002_002 [2.2] Mailbox I-Class API, non-blocking tests
  *
  * <h2>Description</h2>
- * The memory pool functionality is tested by loading and emptying it,
- * all conditions are tested.
- *
- * <h2>Conditions</h2>
- * This test is only executed if the following preprocessor condition
- * evaluates to true:
- * - CH_CFG_USE_SEMAPHORES
- * .
+ * The mailbox I-Class API is tested without triggering blocking
+ * conditions.
  *
  * <h2>Test Steps</h2>
- * - [2.2.1] Adding the objects to the pool using
- *   chGuardedPoolLoadArray().
- * - [2.2.2] Emptying the pool using chGuardedPoolAllocTimeout().
- * - [2.2.3] Now must be empty.
- * - [2.2.4] Adding the objects to the pool using chGuardedPoolFree().
- * - [2.2.5] Emptying the pool using chGuardedPoolAllocTimeout() again.
- * - [2.2.6] Now must be empty again.
+ * - [2.2.1] Testing the mailbox size.
+ * - [2.2.2] Resetting the mailbox, conditions are checked, no errors
+ *   expected. The mailbox is then returned in active state.
+ * - [2.2.3] Filling the mailbox using chMBPostI() and chMBPostAheadI()
+ *   once, no errors expected.
+ * - [2.2.4] Testing intermediate conditions. Data pointers must be
+ *   aligned, semaphore counters are checked.
+ * - [2.2.5] Emptying the mailbox using chMBFetchI(), no errors
+ *   expected.
+ * - [2.2.6] Posting and then fetching one more message, no errors
+ *   expected.
+ * - [2.2.7] Testing final conditions. Data pointers must be aligned to
+ *   buffer start, semaphore counters are checked.
  * .
  */
 
 static void oslib_test_002_002_setup(void) {
-  chGuardedPoolObjectInit(&gmp1, sizeof (uint32_t));
+  chMBObjectInit(&mb1, mb_buffer, MB_SIZE);
+}
+
+static void oslib_test_002_002_teardown(void) {
+  chMBReset(&mb1);
 }
 
 static void oslib_test_002_002_execute(void) {
+  msg_t msg1, msg2;
   unsigned i;
 
-  /* [2.2.1] Adding the objects to the pool using
-     chGuardedPoolLoadArray().*/
+  /* [2.2.1] Testing the mailbox size.*/
   test_set_step(1);
   {
-    chGuardedPoolLoadArray(&gmp1, objects, MEMORY_POOL_SIZE);
+    test_assert_lock(chMBGetFreeCountI(&mb1) == MB_SIZE, "wrong size");
   }
+  test_end_step(1);
 
-  /* [2.2.2] Emptying the pool using chGuardedPoolAllocTimeout().*/
+  /* [2.2.2] Resetting the mailbox, conditions are checked, no errors
+     expected. The mailbox is then returned in active state.*/
   test_set_step(2);
   {
-    for (i = 0; i < MEMORY_POOL_SIZE; i++)
-      test_assert(chGuardedPoolAllocTimeout(&gmp1, TIME_IMMEDIATE) != NULL, "list empty");
+    chSysLock();
+    chMBResetI(&mb1);
+    chSysUnlock();
+    test_assert_lock(chMBGetFreeCountI(&mb1) == MB_SIZE, "not empty");
+    test_assert_lock(chMBGetUsedCountI(&mb1) == 0, "still full");
+    test_assert_lock(mb1.buffer == mb1.wrptr, "write pointer not aligned to base");
+    test_assert_lock(mb1.buffer == mb1.rdptr, "read pointer not aligned to base");
+    chMBResumeX(&mb1);
   }
+  test_end_step(2);
 
-  /* [2.2.3] Now must be empty.*/
+  /* [2.2.3] Filling the mailbox using chMBPostI() and chMBPostAheadI()
+     once, no errors expected.*/
   test_set_step(3);
   {
-    test_assert(chGuardedPoolAllocTimeout(&gmp1, TIME_IMMEDIATE) == NULL, "list not empty");
+    for (i = 0; i < MB_SIZE - 1; i++) {
+      chSysLock();
+      msg1 = chMBPostI(&mb1, 'B' + i);
+      chSysUnlock();
+      test_assert(msg1 == MSG_OK, "wrong wake-up message");
+    }
+    chSysLock();
+    msg1 = chMBPostAheadI(&mb1, 'A');
+    chSysUnlock();
+    test_assert(msg1 == MSG_OK, "wrong wake-up message");
   }
+  test_end_step(3);
 
-  /* [2.2.4] Adding the objects to the pool using
-     chGuardedPoolFree().*/
+  /* [2.2.4] Testing intermediate conditions. Data pointers must be
+     aligned, semaphore counters are checked.*/
   test_set_step(4);
   {
-    for (i = 0; i < MEMORY_POOL_SIZE; i++)
-      chGuardedPoolFree(&gmp1, &objects[i]);
+    test_assert_lock(chMBGetFreeCountI(&mb1) == 0, "still empty");
+    test_assert_lock(chMBGetUsedCountI(&mb1) == MB_SIZE, "not full");
+    test_assert_lock(mb1.rdptr == mb1.wrptr, "pointers not aligned");
   }
+  test_end_step(4);
 
-  /* [2.2.5] Emptying the pool using chGuardedPoolAllocTimeout()
-     again.*/
+  /* [2.2.5] Emptying the mailbox using chMBFetchI(), no errors
+     expected.*/
   test_set_step(5);
   {
-    for (i = 0; i < MEMORY_POOL_SIZE; i++)
-      test_assert(chGuardedPoolAllocTimeout(&gmp1, TIME_IMMEDIATE) != NULL, "list empty");
+    for (i = 0; i < MB_SIZE; i++) {
+      chSysLock();
+      msg1 = chMBFetchI(&mb1, &msg2);
+      chSysUnlock();
+      test_assert(msg1 == MSG_OK, "wrong wake-up message");
+      test_emit_token(msg2);
+    }
+    test_assert_sequence("ABCD", "wrong get sequence");
   }
+  test_end_step(5);
 
-  /* [2.2.6] Now must be empty again.*/
+  /* [2.2.6] Posting and then fetching one more message, no errors
+     expected.*/
   test_set_step(6);
   {
-    test_assert(chGuardedPoolAllocTimeout(&gmp1, TIME_IMMEDIATE) == NULL, "list not empty");
+    msg1 = chMBPostTimeout(&mb1, 'B' + i, TIME_INFINITE);
+    test_assert(msg1 == MSG_OK, "wrong wake-up message");
+    msg1 = chMBFetchTimeout(&mb1, &msg2, TIME_INFINITE);
+    test_assert(msg1 == MSG_OK, "wrong wake-up message");
   }
+  test_end_step(6);
+
+  /* [2.2.7] Testing final conditions. Data pointers must be aligned to
+     buffer start, semaphore counters are checked.*/
+  test_set_step(7);
+  {
+    test_assert_lock(chMBGetFreeCountI(&mb1) == MB_SIZE, "not empty");
+    test_assert_lock(chMBGetUsedCountI(&mb1) == 0, "still full");
+    test_assert(mb1.buffer == mb1.wrptr, "write pointer not aligned to base");
+    test_assert(mb1.buffer == mb1.rdptr, "read pointer not aligned to base");
+  }
+  test_end_step(7);
 }
 
 static const testcase_t oslib_test_002_002 = {
-  "Loading and emptying a guarded memory pool without waiting",
+  "Mailbox I-Class API, non-blocking tests",
   oslib_test_002_002_setup,
-  NULL,
+  oslib_test_002_002_teardown,
   oslib_test_002_002_execute
 };
-#endif /* CH_CFG_USE_SEMAPHORES */
 
-#if (CH_CFG_USE_SEMAPHORES) || defined(__DOXYGEN__)
 /**
- * @page oslib_test_002_003 [2.3] Guarded Memory Pools timeout
+ * @page oslib_test_002_003 [2.3] Mailbox timeouts
  *
  * <h2>Description</h2>
- * The timeout features for the Guarded Memory Pools is tested.
- *
- * <h2>Conditions</h2>
- * This test is only executed if the following preprocessor condition
- * evaluates to true:
- * - CH_CFG_USE_SEMAPHORES
- * .
+ * The mailbox API is tested for timeouts.
  *
  * <h2>Test Steps</h2>
- * - [2.3.1] Trying to allocate with 100mS timeout, must fail because
- *   the pool is empty.
+ * - [2.3.1] Filling the mailbox.
+ * - [2.3.2] Testing chMBPostTimeout(), chMBPostI(),
+ *   chMBPostAheadTimeout() and chMBPostAheadI() timeout.
+ * - [2.3.3] Resetting the mailbox. The mailbox is then returned in
+ *   active state.
+ * - [2.3.4] Testing chMBFetchTimeout() and chMBFetchI() timeout.
  * .
  */
 
 static void oslib_test_002_003_setup(void) {
-  chGuardedPoolObjectInit(&gmp1, sizeof (uint32_t));
+  chMBObjectInit(&mb1, mb_buffer, MB_SIZE);
+}
+
+static void oslib_test_002_003_teardown(void) {
+  chMBReset(&mb1);
 }
 
 static void oslib_test_002_003_execute(void) {
+  msg_t msg1, msg2;
+  unsigned i;
 
-  /* [2.3.1] Trying to allocate with 100mS timeout, must fail because
-     the pool is empty.*/
+  /* [2.3.1] Filling the mailbox.*/
   test_set_step(1);
   {
-    test_assert(chGuardedPoolAllocTimeout(&gmp1, TIME_MS2I(100)) == NULL, "list not empty");
+    for (i = 0; i < MB_SIZE; i++) {
+      msg1 = chMBPostTimeout(&mb1, 'B' + i, TIME_INFINITE);
+      test_assert(msg1 == MSG_OK, "wrong wake-up message");
+    }
   }
+  test_end_step(1);
+
+  /* [2.3.2] Testing chMBPostTimeout(), chMBPostI(),
+     chMBPostAheadTimeout() and chMBPostAheadI() timeout.*/
+  test_set_step(2);
+  {
+    msg1 = chMBPostTimeout(&mb1, 'X', 1);
+    test_assert(msg1 == MSG_TIMEOUT, "wrong wake-up message");
+    chSysLock();
+    msg1 = chMBPostI(&mb1, 'X');
+    chSysUnlock();
+    test_assert(msg1 == MSG_TIMEOUT, "wrong wake-up message");
+    msg1 = chMBPostAheadTimeout(&mb1, 'X', 1);
+    test_assert(msg1 == MSG_TIMEOUT, "wrong wake-up message");
+    chSysLock();
+    msg1 = chMBPostAheadI(&mb1, 'X');
+    chSysUnlock();
+    test_assert(msg1 == MSG_TIMEOUT, "wrong wake-up message");
+  }
+  test_end_step(2);
+
+  /* [2.3.3] Resetting the mailbox. The mailbox is then returned in
+     active state.*/
+  test_set_step(3);
+  {
+    chMBReset(&mb1);
+    chMBResumeX(&mb1);
+  }
+  test_end_step(3);
+
+  /* [2.3.4] Testing chMBFetchTimeout() and chMBFetchI() timeout.*/
+  test_set_step(4);
+  {
+    msg1 = chMBFetchTimeout(&mb1, &msg2, 1);
+    test_assert(msg1 == MSG_TIMEOUT, "wrong wake-up message");
+    chSysLock();
+    msg1 = chMBFetchI(&mb1, &msg2);
+    chSysUnlock();
+    test_assert(msg1 == MSG_TIMEOUT, "wrong wake-up message");
+  }
+  test_end_step(4);
 }
 
 static const testcase_t oslib_test_002_003 = {
-  "Guarded Memory Pools timeout",
+  "Mailbox timeouts",
   oslib_test_002_003_setup,
-  NULL,
+  oslib_test_002_003_teardown,
   oslib_test_002_003_execute
 };
-#endif /* CH_CFG_USE_SEMAPHORES */
 
 /****************************************************************************
  * Exported data.
@@ -283,21 +419,17 @@ static const testcase_t oslib_test_002_003 = {
  */
 const testcase_t * const oslib_test_sequence_002_array[] = {
   &oslib_test_002_001,
-#if (CH_CFG_USE_SEMAPHORES) || defined(__DOXYGEN__)
   &oslib_test_002_002,
-#endif
-#if (CH_CFG_USE_SEMAPHORES) || defined(__DOXYGEN__)
   &oslib_test_002_003,
-#endif
   NULL
 };
 
 /**
- * @brief   Memory Pools.
+ * @brief   Mailboxes.
  */
 const testsequence_t oslib_test_sequence_002 = {
-  "Memory Pools",
+  "Mailboxes",
   oslib_test_sequence_002_array
 };
 
-#endif /* CH_CFG_USE_MEMPOOLS */
+#endif /* CH_CFG_USE_MAILBOXES */

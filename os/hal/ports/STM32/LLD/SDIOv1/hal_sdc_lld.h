@@ -92,6 +92,14 @@
 #endif
 
 /**
+ * @brief   Enable clock bypass.
+ * @note    Allow clock speed up to 50 Mhz.
+ */
+#if !defined(STM32_SDC_SDIO_50MHZ) || defined(__DOXYGEN__)
+#define STM32_SDC_SDIO_50MHZ                FALSE
+#endif
+
+/**
  * @brief   Write timeout in milliseconds.
  */
 #if !defined(STM32_SDC_WRITE_TIMEOUT_MS) || defined(__DOXYGEN__)
@@ -226,15 +234,6 @@ typedef struct SDCDriver SDCDriver;
  */
 typedef struct {
   /**
-   * @brief   Working area for memory consuming operations.
-   * @note    Buffer must be word aligned and big enough to store 512 bytes.
-   * @note    It is mandatory for detecting MMC cards bigger than 2GB else it
-   *          can be @p NULL. SD cards do NOT need it.
-   * @note    Memory pointed by this buffer is only used by @p sdcConnect(),
-   *          afterward it can be reused for other purposes.
-   */
-  uint8_t       *scratchpad;
-  /**
    * @brief   Bus width.
    */
   sdcbusmode_t  bus_width;
@@ -299,6 +298,10 @@ struct SDCDriver {
    * @note      Needed for debugging aid.
    */
   SDIO_TypeDef              *sdio;
+  /**
+   * @brief   Buffer for internal operations.
+   */
+  uint8_t                   buf[MMCSD_BLOCK_SIZE];
 };
 
 /*===========================================================================*/

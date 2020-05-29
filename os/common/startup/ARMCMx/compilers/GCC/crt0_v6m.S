@@ -137,7 +137,7 @@
 
                 .cpu    cortex-m0
                 .fpu    softvfp
-
+                .syntax unified
                 .thumb
                 .text
 
@@ -191,7 +191,7 @@ msloop:
                 cmp     r1, r2
                 bge     endmsloop
                 str     r0, [r1]
-                add     r1, r1, #4
+                adds    r1, #4
                 b       msloop
 endmsloop:
                 /* Process Stack initialization. Note, it assumes that the
@@ -203,7 +203,7 @@ psloop:
                 cmp     r1, r2
                 bge     endpsloop
                 str     r0, [r1]
-                add     r1, r1, #4
+                adds    r1, #4
                 b       psloop
 endpsloop:
 #endif
@@ -211,16 +211,16 @@ endpsloop:
 #if CRT0_INIT_DATA == TRUE
                 /* Data initialization. Note, it assumes that the DATA size
                   is a multiple of 4 so the linker file must ensure this.*/
-                ldr     r1, =_textdata
-                ldr     r2, =_data
-                ldr     r3, =_edata
+                ldr     r1, =__textdata_base__
+                ldr     r2, =__data_base__
+                ldr     r3, =__data_end__
 dloop:
                 cmp     r2, r3
                 bge     enddloop
                 ldr     r0, [r1]
                 str     r0, [r2]
-                add     r1, r1, #4
-                add     r2, r2, #4
+                adds    r1, #4
+                adds    r2, #4
                 b       dloop
 enddloop:
 #endif
@@ -229,13 +229,13 @@ enddloop:
                 /* BSS initialization. Note, it assumes that the DATA size
                   is a multiple of 4 so the linker file must ensure this.*/
                 movs    r0, #0
-                ldr     r1, =_bss_start
-                ldr     r2, =_bss_end
+                ldr     r1, =__bss_base__
+                ldr     r2, =__bss_end__
 bloop:
                 cmp     r1, r2
                 bge     endbloop
                 str     r0, [r1]
-                add     r1, r1, #4
+                adds    r1, #4
                 b       bloop
 endbloop:
 #endif
@@ -250,14 +250,14 @@ endbloop:
 
 #if CRT0_CALL_CONSTRUCTORS == TRUE
                 /* Constructors invocation.*/
-                ldr     r4, =__init_array_start
-                ldr     r5, =__init_array_end
+                ldr     r4, =__init_array_base__
+                ldr     r5, =__init_array_end__
 initloop:
                 cmp     r4, r5
                 bge     endinitloop
                 ldr     r1, [r4]
                 blx     r1
-                add     r4, r4, #4
+                adds    r4, #4
                 b       initloop
 endinitloop:
 #endif
@@ -267,14 +267,14 @@ endinitloop:
 
 #if CRT0_CALL_DESTRUCTORS == TRUE
                 /* Destructors invocation.*/
-                ldr     r4, =__fini_array_start
-                ldr     r5, =__fini_array_end
+                ldr     r4, =__fini_array_base__
+                ldr     r5, =__fini_array_end__
 finiloop:
                 cmp     r4, r5
                 bge     endfiniloop
                 ldr     r1, [r4]
                 blx     r1
-                add     r4, r4, #4
+                adds    r4, #4
                 b       finiloop
 endfiniloop:
 #endif

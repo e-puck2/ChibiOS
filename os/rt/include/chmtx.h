@@ -18,7 +18,7 @@
 */
 
 /**
- * @file    chmtx.h
+ * @file    rt/include/chmtx.h
  * @brief   Mutexes macros and structures.
  *
  * @addtogroup mutexes
@@ -130,6 +130,22 @@ static inline bool chMtxQueueNotEmptyS(mutex_t *mp) {
   chDbgCheckClassS();
 
   return queue_notempty(&mp->queue);
+}
+
+/**
+ * @brief   Returns the mutex owner thread.
+ *
+ * @param[out] mp       pointer to a @p mutex_t structure
+ * @return              The owner thread.
+ * @retval NULL         if the mutex is not owned.
+ *
+ * @iclass
+ */
+static inline thread_t *chMtxGetOwnerI(mutex_t *mp) {
+
+  chDbgCheckClassI();
+
+  return mp->owner;
 }
 
 /**

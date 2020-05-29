@@ -138,62 +138,6 @@
 #endif
 
 /**
- * @brief   I2C1 RX DMA channel setting.
- */
-#if !defined(STM32_I2C_I2C1_RX_DMA_CHANNEL) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C1_RX_DMA_CHANNEL       6
-#endif
-
-/**
- * @brief   I2C1 TX DMA channel setting.
- */
-#if !defined(STM32_I2C_I2C1_TX_DMA_CHANNEL) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C1_TX_DMA_CHANNEL       7
-#endif
-
-/**
- * @brief   I2C2 RX DMA channel setting.
- */
-#if !defined(STM32_I2C_I2C2_RX_DMA_CHANNEL) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C2_RX_DMA_CHANNEL       8
-#endif
-
-/**
- * @brief   I2C2 TX DMA channel setting.
- */
-#if !defined(STM32_I2C_I2C2_TX_DMA_CHANNEL) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C2_TX_DMA_CHANNEL       9
-#endif
-
-/**
- * @brief   I2C3 RX DMA channel setting.
- */
-#if !defined(STM32_I2C_I2C3_RX_DMA_CHANNEL) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C3_RX_DMA_CHANNEL       8
-#endif
-
-/**
- * @brief   I2C3 TX DMA channel setting.
- */
-#if !defined(STM32_I2C_I2C3_TX_DMA_CHANNEL) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C3_TX_DMA_CHANNEL       9
-#endif
-
-/**
- * @brief   I2C4 RX DMA channel setting.
- */
-#if !defined(STM32_I2C_I2C4_RX_BDMA_CHANNEL) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C4_RX_BDMA_CHANNEL      0
-#endif
-
-/**
- * @brief   I2C4 TX DMA channel setting.
- */
-#if !defined(STM32_I2C_I2C4_TX_BDMA_CHANNEL) || defined(__DOXYGEN__)
-#define STM32_I2C_I2C4_TX_BDMA_CHANNEL      1
-#endif
-
-/**
  * @brief   I2C1 DMA priority (0..3|lowest..highest).
  * @note    The priority level is used for both the TX and RX DMA streams but
  *          because of the streams ordering the RX stream has always priority
@@ -247,6 +191,27 @@
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
 
+/* Registry checks.*/
+#if !defined(STM32_HAS_I2C1)
+#error "STM32_HAS_I2C1 not defined in registry"
+#endif
+
+#if !defined(STM32_HAS_I2C2)
+#error "STM32_HAS_I2C2 not defined in registry"
+#endif
+
+#if !defined(STM32_HAS_I2C3)
+#error "STM32_HAS_I2C3 not defined in registry"
+#endif
+
+#if !defined(STM32_HAS_I2C4)
+#error "STM32_HAS_I2C4 not defined in registry"
+#endif
+
+#if !defined(STM32_I2C4_USE_BDMA)
+#error "STM32_I2C4_USE_BDMA not defined in registry"
+#endif
+
 /** @brief  error checks */
 #if STM32_I2C_USE_I2C1 && !STM32_HAS_I2C1
 #error "I2C1 not present in the selected device"
@@ -291,65 +256,121 @@
 
 #if STM32_I2C_USE_DMA == TRUE
 
-#if STM32_I2C_USE_I2C1 &&                                                   \
-    !STM32_DMA_IS_VALID_CHANNEL(STM32_I2C_I2C1_RX_DMA_CHANNEL)
-#error "Invalid DMA channel assigned to I2C1 RX"
+#if STM32_I2C_USE_I2C1
+#if !defined(STM32_I2C_I2C1_RX_DMA_STREAM)
+#error "STM32_I2C_I2C1_RX_DMA_STREAM not defined"
 #endif
 
-#if STM32_I2C_USE_I2C1 &&                                                   \
-    !STM32_DMA_IS_VALID_CHANNEL(STM32_I2C_I2C1_TX_DMA_CHANNEL)
-#error "Invalid DMA channel assigned to I2C1 TX"
+#if !defined(STM32_I2C_I2C1_TX_DMA_STREAM)
+#error "STM32_I2C_I2C1_TX_DMA_STREAM not defined"
 #endif
 
-#if STM32_I2C_USE_I2C2 &&                                                   \
-    !STM32_DMA_IS_VALID_CHANNEL(STM32_I2C_I2C2_RX_DMA_CHANNEL)
-#error "Invalid DMA channel assigned to I2C2 RX"
+#if !STM32_DMA_IS_VALID_STREAM(STM32_I2C_I2C1_RX_DMA_STREAM)
+#error "Invalid DMA stream assigned to I2C1 RX"
 #endif
 
-#if STM32_I2C_USE_I2C2 &&                                                   \
-    !STM32_DMA_IS_VALID_CHANNEL(STM32_I2C_I2C2_TX_DMA_CHANNEL)
-#error "Invalid DMA channel assigned to I2C2 TX"
+#if !STM32_DMA_IS_VALID_STREAM(STM32_I2C_I2C1_TX_DMA_STREAM)
+#error "Invalid DMA stream assigned to I2C1 TX"
 #endif
 
-#if STM32_I2C_USE_I2C3 &&                                                   \
-    !STM32_DMA_IS_VALID_CHANNEL(STM32_I2C_I2C3_RX_DMA_CHANNEL)
-#error "Invalid DMA channel assigned to I2C3 RX"
-#endif
-
-#if STM32_I2C_USE_I2C3 &&                                                   \
-    !STM32_DMA_IS_VALID_CHANNEL(STM32_I2C_I2C3_TX_DMA_CHANNEL)
-#error "Invalid DMA channel assigned to I2C3 TX"
-#endif
-
-#if STM32_I2C_USE_I2C4 &&                                                   \
-    !STM32_BDMA_IS_VALID_CHANNEL(STM32_I2C_I2C4_RX_BDMA_CHANNEL)
-#error "Invalid BDMA channel assigned to I2C4 RX"
-#endif
-
-#if STM32_I2C_USE_I2C4 &&                                                   \
-    !STM32_BDMA_IS_VALID_CHANNEL(STM32_I2C_I2C4_TX_BDMA_CHANNEL)
-#error "Invalid BDMA channel assigned to I2C4 TX"
-#endif
-
-#if STM32_I2C_USE_I2C1 &&                                                   \
-    !STM32_DMA_IS_VALID_PRIORITY(STM32_I2C_I2C1_DMA_PRIORITY)
+#if !STM32_DMA_IS_VALID_PRIORITY(STM32_I2C_I2C1_DMA_PRIORITY)
 #error "Invalid DMA priority assigned to I2C1"
 #endif
+#endif
 
-#if STM32_I2C_USE_I2C2 &&                                                   \
-    !STM32_DMA_IS_VALID_PRIORITY(STM32_I2C_I2C2_DMA_PRIORITY)
+#if STM32_I2C_USE_I2C2
+#if !defined(STM32_I2C_I2C2_RX_DMA_STREAM)
+#error "STM32_I2C_I2C2_RX_DMA_STREAM not defined"
+#endif
+
+#if !defined(STM32_I2C_I2C2_TX_DMA_STREAM)
+#error "STM32_I2C_I2C2_TX_DMA_STREAM not defined"
+#endif
+
+#if !STM32_DMA_IS_VALID_STREAM(STM32_I2C_I2C2_RX_DMA_STREAM)
+#error "Invalid DMA stream assigned to I2C2 RX"
+#endif
+
+#if !STM32_DMA_IS_VALID_STREAM(STM32_I2C_I2C2_TX_DMA_STREAM)
+#error "Invalid DMA stream assigned to I2C2 TX"
+#endif
+
+#if !STM32_DMA_IS_VALID_PRIORITY(STM32_I2C_I2C2_DMA_PRIORITY)
 #error "Invalid DMA priority assigned to I2C2"
 #endif
+#endif
 
-#if STM32_I2C_USE_I2C3 &&                                                   \
-    !STM32_DMA_IS_VALID_PRIORITY(STM32_I2C_I2C3_DMA_PRIORITY)
+#if STM32_I2C_USE_I2C3
+#if !defined(STM32_I2C_I2C3_RX_DMA_STREAM)
+#error "STM32_I2C_I2C3_RX_DMA_STREAM not defined"
+#endif
+
+#if !defined(STM32_I2C_I2C3_TX_DMA_STREAM)
+#error "STM32_I2C_I2C3_TX_DMA_STREAM not defined"
+#endif
+
+#if !STM32_DMA_IS_VALID_STREAM(STM32_I2C_I2C3_RX_DMA_STREAM)
+#error "Invalid DMA stream assigned to I2C3 RX"
+#endif
+
+#if !STM32_DMA_IS_VALID_STREAM(STM32_I2C_I2C3_TX_DMA_STREAM)
+#error "Invalid DMA stream assigned to I2C3 TX"
+#endif
+
+#if !STM32_DMA_IS_VALID_PRIORITY(STM32_I2C_I2C3_DMA_PRIORITY)
 #error "Invalid DMA priority assigned to I2C3"
 #endif
+#endif
 
-#if STM32_I2C_USE_I2C4 &&                                                   \
-    !STM32_DMA_IS_VALID_PRIORITY(STM32_I2C_I2C4_DMA_PRIORITY)
+#if STM32_I2C_USE_I2C4
+#if STM32_I2C4_USE_BDMA
+
+#if !defined(STM32_I2C_I2C4_RX_BDMA_STREAM)
+#error "STM32_I2C_I2C4_RX_BDMA_STREAM not defined"
+#endif
+
+#if !defined(STM32_I2C_I2C4_TX_BDMA_STREAM)
+#error "STM32_I2C_I2C4_TX_BDMA_STREAM not defined"
+#endif
+
+#if !STM32_BDMA_IS_VALID_STREAM(STM32_I2C_I2C4_RX_BDMA_STREAM)
+#error "Invalid BDMA stream assigned to I2C4 RX"
+#endif
+
+#if !STM32_BDMA_IS_VALID_STREAM(STM32_I2C_I2C4_TX_BDMA_STREAM)
+#error "Invalid BDMA stream assigned to I2C4 TX"
+#endif
+
+#if !STM32_BDMA_IS_VALID_PRIORITY(STM32_I2C_I2C4_DMA_PRIORITY)
 #error "Invalid DMA priority assigned to I2C4"
 #endif
+
+#else /* !STM32_I2C4_USE_BDMA */
+
+#if !defined(STM32_I2C_I2C4_RX_DMA_STREAM)
+#error "STM32_I2C_I2C4_RX_DMA_STREAM not defined"
+#endif
+
+#if !defined(STM32_I2C_I2C4_TX_DMA_STREAM)
+#error "STM32_I2C_I2C4_TX_DMA_STREAM not defined"
+#endif
+
+#if !STM32_DMA_IS_VALID_STREAM(STM32_I2C_I2C4_RX_DMA_STREAM)
+#error "Invalid DMA stream assigned to I2C4 RX"
+#endif
+
+#if !STM32_DMA_IS_VALID_STREAM(STM32_I2C_I2C4_TX_DMA_STREAM)
+#error "Invalid DMA stream assigned to I2C4 TX"
+#endif
+
+#if !STM32_DMA_IS_VALID_PRIORITY(STM32_I2C_I2C4_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to I2C4"
+#endif
+
+#endif /* !STM32_I2C4_USE_BDMA */
+#endif /* STM32_I2C_USE_I2C4 */
+
+#if STM32_I2C4_USE_BDMA == TRUE
 
 #if STM32_I2C_USE_I2C1 || STM32_I2C_USE_I2C2 || STM32_I2C_USE_I2C3
 #define STM32_I2C_DMA_REQUIRED
@@ -359,11 +380,20 @@
 #endif
 
 #if STM32_I2C_USE_I2C4
-#define STM32_I2C_BDMA_REQUIRED
 #if !defined(STM32_BDMA_REQUIRED)
 #define STM32_BDMA_REQUIRED
 #endif
 #endif
+#else /* STM32_I2C4_USE_BDMA != TRUE */
+
+#if STM32_I2C_USE_I2C1 || STM32_I2C_USE_I2C2 || STM32_I2C_USE_I2C3 || STM32_I2C_USE_I2C4
+#define STM32_I2C_DMA_REQUIRED
+#if !defined(STM32_DMA_REQUIRED)
+#define STM32_DMA_REQUIRED
+#endif
+#endif
+
+#endif /* STM32_I2C4_USE_BDMA != TRUE */
 
 #endif /* STM32_I2C_USE_DMA == TRUE */
 
@@ -452,7 +482,7 @@ struct I2CDriver {
    * @brief TX DMA mode bit mask.
    */
   uint32_t                  txdmamode;
-#if defined(STM32_I2C_DMA_REQUIRED) && defined(STM32_I2C_BDMA_REQUIRED)
+#if defined(STM32_I2C_DMA_REQUIRED) && defined(STM32_BDMA_REQUIRED)
   /**
    * @brief   DMA type for this instance.
    */
@@ -468,11 +498,13 @@ struct I2CDriver {
      */
     const stm32_dma_stream_t  *dma;
 #endif
-#if defined(STM32_I2C_BDMA_REQUIRED) || defined(__DOXYGEN__)
+#if (STM32_I2C4_USE_BDMA == TRUE) || defined(__DOXYGEN__)
+#if defined(STM32_BDMA_REQUIRED) || defined(__DOXYGEN__)
     /**
      * @brief   Receive BDMA stream.
      */
     const stm32_bdma_stream_t  *bdma;
+#endif
 #endif
   } rx;
   /**
@@ -485,11 +517,13 @@ struct I2CDriver {
      */
     const stm32_dma_stream_t  *dma;
 #endif
-#if defined(STM32_I2C_BDMA_REQUIRED) || defined(__DOXYGEN__)
+#if (STM32_I2C4_USE_BDMA == TRUE) || defined(__DOXYGEN__)
+#if defined(STM32_BDMA_REQUIRED) || defined(__DOXYGEN__)
     /**
      * @brief   Transmit DMA stream.
      */
     const stm32_bdma_stream_t  *bdma;
+#endif
 #endif
   } tx;
 #else /* STM32_I2C_USE_DMA == FALSE */

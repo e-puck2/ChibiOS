@@ -65,6 +65,9 @@
 #define I2C_EV5_MASTER_MODE_SELECT                                          \
   ((uint32_t)(((I2C_SR2_MSL | I2C_SR2_BUSY) << 16) | I2C_SR1_SB))
 
+#define I2C_EV5_MASTER_MODE_SELECT_NO_BUSY                                  \
+  ((uint32_t)((I2C_SR2_MSL << 16) | I2C_SR1_SB))
+
 #define I2C_EV6_MASTER_TRA_MODE_SELECTED                                    \
   ((uint32_t)(((I2C_SR2_MSL | I2C_SR2_BUSY | I2C_SR2_TRA) << 16) |          \
               I2C_SR1_ADDR | I2C_SR1_TXE))
@@ -148,7 +151,7 @@ static void i2c_lld_set_clock(I2CDriver *i2cp) {
 
   osalDbgCheck((i2cp != NULL) &&
                (clock_speed > 0) &&
-               (clock_speed <= 4000000));
+               (clock_speed <= 400000));
 
   /* CR2 Configuration.*/
   dp->CR2 &= (uint16_t)~I2C_CR2_FREQ;
@@ -252,7 +255,8 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
      done by the DMA.*/
   switch (I2C_EV_MASK & (event | (regSR2 << 16))) {
   case I2C_EV5_MASTER_MODE_SELECT:
-    if ((i2cp->addr >> 8) > 0) { 
+  case I2C_EV5_MASTER_MODE_SELECT_NO_BUSY:
+    if ((i2cp->addr >> 8) > 0) {
       /* 10-bit address: 1 1 1 1 0 X X R/W */
       dp->DR = 0xF0 | (0x6 & (i2cp->addr >> 8)) | (0x1 & i2cp->addr);
     } else {
@@ -276,6 +280,7 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
     break;
   case I2C_EV8_2_MASTER_BYTE_TRANSMITTED:
     /* Catches BTF event after the end of transmission.*/
+    (void)dp->DR; /* clear BTF.*/
     if (dmaStreamGetTransactionSize(i2cp->dmarx) > 0) {
       /* Starts "read after write" operation, LSB = 1 -> receive.*/
       i2cp->addr |= 0x01;
@@ -292,6 +297,11 @@ static void i2c_lld_serve_event_interrupt(I2CDriver *i2cp) {
   /* Clear ADDR flag. */
   if (event & (I2C_SR1_ADDR | I2C_SR1_ADD10))
     (void)dp->SR2;
+
+  /* Errata 2.4.6 for STM32F40x, Spurious Bus Error detection in Master mode.*/
+  if (event & I2C_SR1_BERR) {
+    dp->SR1 &= ~I2C_SR1_BERR;
+  }
 }
 
 /**
@@ -364,8 +374,12 @@ static void i2c_lld_serve_error_interrupt(I2CDriver *i2cp, uint16_t sr) {
 
   i2cp->errors = I2C_NO_ERROR;
 
-  if (sr & I2C_SR1_BERR)                            /* Bus error.           */
+  if (sr & I2C_SR1_BERR) {                          /* Bus error.           */
     i2cp->errors |= I2C_BUS_ERROR;
+    /* Errata 2.4.6 for STM32F40x, Spurious Bus Error detection in
+       Master mode.*/
+    i2cp->i2c->SR1 &= ~I2C_SR1_BERR;
+  }
 
   if (sr & I2C_SR1_ARLO)                            /* Arbitration lost.    */
     i2cp->errors |= I2C_ARBITRATION_LOST;
@@ -506,24 +520,24 @@ void i2c_lld_init(void) {
   i2cObjectInit(&I2CD1);
   I2CD1.thread = NULL;
   I2CD1.i2c    = I2C1;
-  I2CD1.dmarx  = STM32_DMA_STREAM(STM32_I2C_I2C1_RX_DMA_STREAM);
-  I2CD1.dmatx  = STM32_DMA_STREAM(STM32_I2C_I2C1_TX_DMA_STREAM);
+  I2CD1.dmarx  = NULL;
+  I2CD1.dmatx  = NULL;
 #endif /* STM32_I2C_USE_I2C1 */
 
 #if STM32_I2C_USE_I2C2
   i2cObjectInit(&I2CD2);
   I2CD2.thread = NULL;
   I2CD2.i2c    = I2C2;
-  I2CD2.dmarx  = STM32_DMA_STREAM(STM32_I2C_I2C2_RX_DMA_STREAM);
-  I2CD2.dmatx  = STM32_DMA_STREAM(STM32_I2C_I2C2_TX_DMA_STREAM);
+  I2CD2.dmarx  = NULL;
+  I2CD2.dmatx  = NULL;
 #endif /* STM32_I2C_USE_I2C2 */
 
 #if STM32_I2C_USE_I2C3
   i2cObjectInit(&I2CD3);
   I2CD3.thread = NULL;
   I2CD3.i2c    = I2C3;
-  I2CD3.dmarx  = STM32_DMA_STREAM(STM32_I2C_I2C3_RX_DMA_STREAM);
-  I2CD3.dmatx  = STM32_DMA_STREAM(STM32_I2C_I2C3_TX_DMA_STREAM);
+  I2CD3.dmarx  = NULL;
+  I2CD3.dmatx  = NULL;
 #endif /* STM32_I2C_USE_I2C3 */
 }
 
@@ -551,19 +565,19 @@ void i2c_lld_start(I2CDriver *i2cp) {
 
 #if STM32_I2C_USE_I2C1
     if (&I2CD1 == i2cp) {
-      bool b;
-
       rccResetI2C1();
-      b = dmaStreamAllocate(i2cp->dmarx,
-                            STM32_I2C_I2C1_IRQ_PRIORITY,
-                            (stm32_dmaisr_t)i2c_lld_serve_rx_end_irq,
-                            (void *)i2cp);
-      osalDbgAssert(!b, "stream already allocated");
-      b = dmaStreamAllocate(i2cp->dmatx,
-                            STM32_I2C_I2C1_IRQ_PRIORITY,
-                            (stm32_dmaisr_t)i2c_lld_serve_tx_end_irq,
-                            (void *)i2cp);
-      osalDbgAssert(!b, "stream already allocated");
+
+      i2cp->dmarx = dmaStreamAllocI(STM32_I2C_I2C1_RX_DMA_STREAM,
+                                    STM32_I2C_I2C1_IRQ_PRIORITY,
+                                    (stm32_dmaisr_t)i2c_lld_serve_rx_end_irq,
+                                    (void *)i2cp);
+      osalDbgAssert(i2cp->dmarx != NULL, "unable to allocate stream");
+      i2cp->dmatx = dmaStreamAllocI(STM32_I2C_I2C1_TX_DMA_STREAM,
+                                    STM32_I2C_I2C1_IRQ_PRIORITY,
+                                    (stm32_dmaisr_t)i2c_lld_serve_tx_end_irq,
+                                    (void *)i2cp);
+      osalDbgAssert(i2cp->dmatx != NULL, "unable to allocate stream");
+
       rccEnableI2C1(true);
       nvicEnableVector(I2C1_EV_IRQn, STM32_I2C_I2C1_IRQ_PRIORITY);
       nvicEnableVector(I2C1_ER_IRQn, STM32_I2C_I2C1_IRQ_PRIORITY);
@@ -577,19 +591,19 @@ void i2c_lld_start(I2CDriver *i2cp) {
 
 #if STM32_I2C_USE_I2C2
     if (&I2CD2 == i2cp) {
-      bool b;
-
       rccResetI2C2();
-      b = dmaStreamAllocate(i2cp->dmarx,
-                            STM32_I2C_I2C2_IRQ_PRIORITY,
-                            (stm32_dmaisr_t)i2c_lld_serve_rx_end_irq,
-                            (void *)i2cp);
-      osalDbgAssert(!b, "stream already allocated");
-      b = dmaStreamAllocate(i2cp->dmatx,
-                            STM32_I2C_I2C2_IRQ_PRIORITY,
-                            (stm32_dmaisr_t)i2c_lld_serve_tx_end_irq,
-                            (void *)i2cp);
-      osalDbgAssert(!b, "stream already allocated");
+
+      i2cp->dmarx = dmaStreamAllocI(STM32_I2C_I2C2_RX_DMA_STREAM,
+                                    STM32_I2C_I2C2_IRQ_PRIORITY,
+                                    (stm32_dmaisr_t)i2c_lld_serve_rx_end_irq,
+                                    (void *)i2cp);
+      osalDbgAssert(i2cp->dmarx != NULL, "unable to allocate stream");
+      i2cp->dmatx = dmaStreamAllocI(STM32_I2C_I2C2_TX_DMA_STREAM,
+                                    STM32_I2C_I2C2_IRQ_PRIORITY,
+                                    (stm32_dmaisr_t)i2c_lld_serve_tx_end_irq,
+                                    (void *)i2cp);
+      osalDbgAssert(i2cp->dmatx != NULL, "unable to allocate stream");
+
       rccEnableI2C2(true);
       nvicEnableVector(I2C2_EV_IRQn, STM32_I2C_I2C2_IRQ_PRIORITY);
       nvicEnableVector(I2C2_ER_IRQn, STM32_I2C_I2C2_IRQ_PRIORITY);
@@ -603,19 +617,19 @@ void i2c_lld_start(I2CDriver *i2cp) {
 
 #if STM32_I2C_USE_I2C3
     if (&I2CD3 == i2cp) {
-      bool b;
-
       rccResetI2C3();
-      b = dmaStreamAllocate(i2cp->dmarx,
-                            STM32_I2C_I2C3_IRQ_PRIORITY,
-                            (stm32_dmaisr_t)i2c_lld_serve_rx_end_irq,
-                            (void *)i2cp);
-      osalDbgAssert(!b, "stream already allocated");
-      b = dmaStreamAllocate(i2cp->dmatx,
-                            STM32_I2C_I2C3_IRQ_PRIORITY,
-                            (stm32_dmaisr_t)i2c_lld_serve_tx_end_irq,
-                            (void *)i2cp);
-      osalDbgAssert(!b, "stream already allocated");
+
+      i2cp->dmarx = dmaStreamAllocI(STM32_I2C_I2C3_RX_DMA_STREAM,
+                                    STM32_I2C_I2C3_IRQ_PRIORITY,
+                                    (stm32_dmaisr_t)i2c_lld_serve_rx_end_irq,
+                                    (void *)i2cp);
+      osalDbgAssert(i2cp->dmarx != NULL, "unable to allocate stream");
+      i2cp->dmatx = dmaStreamAllocI(STM32_I2C_I2C3_TX_DMA_STREAM,
+                                    STM32_I2C_I2C3_IRQ_PRIORITY,
+                                    (stm32_dmaisr_t)i2c_lld_serve_tx_end_irq,
+                                    (void *)i2cp);
+      osalDbgAssert(i2cp->dmatx != NULL, "unable to allocate stream");
+
       rccEnableI2C3(true);
       nvicEnableVector(I2C3_EV_IRQn, STM32_I2C_I2C3_IRQ_PRIORITY);
       nvicEnableVector(I2C3_ER_IRQn, STM32_I2C_I2C3_IRQ_PRIORITY);
@@ -659,8 +673,10 @@ void i2c_lld_stop(I2CDriver *i2cp) {
 
     /* I2C disable.*/
     i2c_lld_abort_operation(i2cp);
-    dmaStreamRelease(i2cp->dmatx);
-    dmaStreamRelease(i2cp->dmarx);
+    dmaStreamFreeI(i2cp->dmatx);
+    dmaStreamFreeI(i2cp->dmarx);
+    i2cp->dmatx = NULL;
+    i2cp->dmarx = NULL;
 
 #if STM32_I2C_USE_I2C1
     if (&I2CD1 == i2cp) {
@@ -716,6 +732,7 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
                                      sysinterval_t timeout) {
   I2C_TypeDef *dp = i2cp->i2c;
   systime_t start, end;
+  msg_t msg;
 
 #if defined(STM32F1XX_I2C)
   osalDbgCheck(rxbytes > 1);
@@ -751,8 +768,10 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
     /* If the system time went outside the allowed window then a timeout
        condition is returned.*/
-    if (!osalTimeIsInRangeX(osalOsGetSystemTimeX(), start, end))
+    if (!osalTimeIsInRangeX(osalOsGetSystemTimeX(), start, end)) {
+      dmaStreamDisable(i2cp->dmarx);
       return MSG_TIMEOUT;
+    }
 
     osalSysUnlock();
   }
@@ -762,7 +781,12 @@ msg_t i2c_lld_master_receive_timeout(I2CDriver *i2cp, i2caddr_t addr,
   dp->CR1 |= I2C_CR1_START | I2C_CR1_ACK;
 
   /* Waits for the operation completion or a timeout.*/
-  return osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
+  msg = osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
+  if (msg != MSG_OK) {
+    dmaStreamDisable(i2cp->dmarx);
+  }
+
+  return msg;
 }
 
 /**
@@ -796,6 +820,7 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
                                       sysinterval_t timeout) {
   I2C_TypeDef *dp = i2cp->i2c;
   systime_t start, end;
+  msg_t msg;
 
 #if defined(STM32F1XX_I2C)
   osalDbgCheck((rxbytes == 0) || ((rxbytes > 1) && (rxbuf != NULL)));
@@ -836,8 +861,11 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
 
     /* If the system time went outside the allowed window then a timeout
        condition is returned.*/
-    if (!osalTimeIsInRangeX(osalOsGetSystemTimeX(), start, end))
+    if (!osalTimeIsInRangeX(osalOsGetSystemTimeX(), start, end)) {
+      dmaStreamDisable(i2cp->dmatx);
+      dmaStreamDisable(i2cp->dmarx);
       return MSG_TIMEOUT;
+    }
 
     osalSysUnlock();
   }
@@ -847,7 +875,13 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
   dp->CR1 |= I2C_CR1_START;
 
   /* Waits for the operation completion or a timeout.*/
-  return osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
+  msg = osalThreadSuspendTimeoutS(&i2cp->thread, timeout);
+  if (msg != MSG_OK) {
+    dmaStreamDisable(i2cp->dmatx);
+    dmaStreamDisable(i2cp->dmarx);
+  }
+
+  return msg;
 }
 
 #endif /* HAL_USE_I2C */

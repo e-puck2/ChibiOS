@@ -31,72 +31,6 @@
 /* Driver constants.                                                         */
 /*===========================================================================*/
 
-/**
- * @name    Transfer options
- * @note    The Low Level Driver should undef those modes that are not
- *          supported. The LLD can also define additional modes or reorder
- *          the bit masks in a more convenient way for the underlying
- *          implementation. It is important however to maintain the same
- *          same for the same functionality.
- * @{
- */
-#define WSPI_CFG_INSTRUCTION_MODE_MASK          (7LU << 0LU)
-#define WSPI_CFG_INSTRUCTION_MODE_NONE          (0LU << 0LU)
-#define WSPI_CFG_INSTRUCTION_MODE_ONE_LINES     (1LU << 0LU)
-#define WSPI_CFG_INSTRUCTION_MODE_TWO_LINES     (2LU << 0LU)
-#define WSPI_CFG_INSTRUCTION_MODE_FOUR_LINES    (3LU << 0LU)
-#define WSPI_CFG_INSTRUCTION_MODE_EIGHT_LINES   (4LU << 0LU)
-
-#define WSPI_CFG_INSTRUCTION_DDR                (1LU << 3LU)
-
-#define WSPI_CFG_INSTRUCTION_SIZE_MASK          (3LU << 4LU)
-#define WSPI_CFG_INSTRUCTION_SIZE_8             (0LU << 4LU)
-#define WSPI_CFG_INSTRUCTION_SIZE_16            (1LU << 4LU)
-#define WSPI_CFG_INSTRUCTION_SIZE_24            (2LU << 4LU)
-#define WSPI_CFG_INSTRUCTION_SIZE_32            (3LU << 4LU)
-
-#define WSPI_CFG_ADDR_MODE_MASK                 (7LU << 8LU)
-#define WSPI_CFG_ADDR_MODE_NONE                 (0LU << 8LU)
-#define WSPI_CFG_ADDR_MODE_ONE_LINE             (1LU << 8LU)
-#define WSPI_CFG_ADDR_MODE_TWO_LINES            (2LU << 8LU)
-#define WSPI_CFG_ADDR_MODE_FOUR_LINES           (3LU << 8LU)
-#define WSPI_CFG_ADDR_MODE_EIGHT_LINES          (4LU << 8LU)
-
-#define WSPI_CFG_ADDR_DDR                       (1LU << 11LU)
-
-#define WSPI_CFG_ADDR_SIZE_MASK                 (3LU << 12LU)
-#define WSPI_CFG_ADDR_SIZE_8                    (0LU << 12LU)
-#define WSPI_CFG_ADDR_SIZE_16                   (1LU << 12LU)
-#define WSPI_CFG_ADDR_SIZE_24                   (2LU << 12LU)
-#define WSPI_CFG_ADDR_SIZE_32                   (3LU << 12LU)
-
-#define WSPI_CFG_ALT_MODE_MASK                  (7LU << 16LU)
-#define WSPI_CFG_ALT_MODE_NONE                  (0LU << 16LU)
-#define WSPI_CFG_ALT_MODE_ONE_LINE              (1LU << 16LU)
-#define WSPI_CFG_ALT_MODE_TWO_LINES             (2LU << 16LU)
-#define WSPI_CFG_ALT_MODE_FOUR_LINES            (3LU << 16LU)
-#define WSPI_CFG_ALT_MODE_EIGHT_LINES           (4LU << 16LU)
-
-#define WSPI_CFG_ALT_DDR                        (1LU << 19LU)
-
-#define WSPI_CFG_ALT_SIZE_MASK                  (3LU << 20LU)
-#define WSPI_CFG_ALT_SIZE_8                     (0LU << 20LU)
-#define WSPI_CFG_ALT_SIZE_16                    (1LU << 20LU)
-#define WSPI_CFG_ALT_SIZE_24                    (2LU << 20LU)
-#define WSPI_CFG_ALT_SIZE_32                    (3LU << 20LU)
-
-#define WSPI_CFG_DATA_MODE_MASK                 (7LU << 24LU)
-#define WSPI_CFG_DATA_MODE_NONE                 (0LU << 24LU)
-#define WSPI_CFG_DATA_MODE_ONE_LINE             (1LU << 24LU)
-#define WSPI_CFG_DATA_MODE_TWO_LINES            (2LU << 24LU)
-#define WSPI_CFG_DATA_MODE_FOUR_LINES           (3LU << 24LU)
-#define WSPI_CFG_DATA_MODE_EIGHT_LINES          (4LU << 24LU)
-
-#define WSPI_CFG_DATA_DDR                       (1LU << 27LU)
-
-#define WSPI_CFG_SIOO                           (1LU << 31LU)
-/** @} */
-
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
@@ -143,6 +77,24 @@ typedef enum {
 } wspistate_t;
 
 /**
+ * @brief   Type of a structure representing an WSPI driver.
+ */
+typedef struct hal_wspi_driver WSPIDriver;
+
+/**
+ * @brief   Type of a structure representing an WSPI driver configuration.
+ */
+typedef struct hal_wspi_config WSPIConfig;
+
+/**
+ * @brief   Type of a WSPI notification callback.
+ *
+ * @param[in] wspip     pointer to the @p WSPIDriver object triggering the
+ *                      callback
+ */
+typedef void (*wspicallback_t)(WSPIDriver *wspip);
+
+/**
  * @brief   Type of a WSPI command descriptor.
  */
 typedef struct {
@@ -168,15 +120,142 @@ typedef struct {
   uint32_t              dummy;
 } wspi_command_t;
 
+/* Including the low level driver header, it exports information required
+   for completing types.*/
 #include "hal_wspi_lld.h"
 
 #if !defined(WSPI_SUPPORTS_MEMMAP)
 #error "low level does not define WSPI_SUPPORTS_MEMMAP"
 #endif
 
+#if !defined(WSPI_DEFAULT_CFG_MASKS)
+#error "low level does not define WSPI_DEFAULT_CFG_MASKS"
+#endif
+
+/**
+ * @brief   Driver configuration structure.
+ */
+struct hal_wspi_config {
+  /**
+   * @brief   Operation complete callback or @p NULL.
+   */
+  wspicallback_t            end_cb;
+  /**
+   * @brief   Operation error callback or @p NULL.
+   */
+  wspicallback_t            error_cb;
+  /* End of the mandatory fields.*/
+  wspi_lld_config_fields;
+};
+
+/**
+ * @brief   Structure representing an WSPI driver.
+ */
+struct hal_wspi_driver {
+  /**
+   * @brief   Driver state.
+   */
+  wspistate_t               state;
+  /**
+   * @brief   Current configuration data.
+   */
+  const WSPIConfig          *config;
+#if (WSPI_USE_WAIT == TRUE) || defined(__DOXYGEN__)
+  /**
+   * @brief   Waiting thread.
+   */
+  thread_reference_t        thread;
+#endif /* WSPI_USE_WAIT */
+#if (WSPI_USE_MUTUAL_EXCLUSION == TRUE) || defined(__DOXYGEN__)
+  /**
+   * @brief   Mutex protecting the peripheral.
+   */
+  mutex_t                   mutex;
+#endif /* WSPI_USE_MUTUAL_EXCLUSION */
+#if defined(WSPI_DRIVER_EXT_FIELDS)
+  WSPI_DRIVER_EXT_FIELDS
+#endif
+  /* End of the mandatory fields.*/
+  wspi_lld_driver_fields;
+};
+
 /*===========================================================================*/
 /* Driver macros.                                                            */
 /*===========================================================================*/
+
+#if (WSPI_DEFAULT_CFG_MASKS == TRUE) || defined(__DOXYGEN__)
+/**
+ * @name    Transfer options
+ * @note    The low level driver has the option to override the following
+ *          definitions and use its own ones. In must take care to use
+ *          the same name for the same function or compatibility is not
+ *          ensured.
+ * @{
+ */
+#define WSPI_CFG_CMD_MODE_MASK                  (7LU << 0LU)
+#define WSPI_CFG_CMD_MODE_NONE                  (0LU << 0LU)
+#define WSPI_CFG_CMD_MODE_ONE_LINE              (1LU << 0LU)
+#define WSPI_CFG_CMD_MODE_TWO_LINES             (2LU << 0LU)
+#define WSPI_CFG_CMD_MODE_FOUR_LINES            (3LU << 0LU)
+#define WSPI_CFG_CMD_MODE_EIGHT_LINES           (4LU << 0LU)
+
+#define WSPI_CFG_CMD_DTR                        (1LU << 3LU)
+
+#define WSPI_CFG_CMD_SIZE_MASK                  (3LU << 4LU)
+#define WSPI_CFG_CMD_SIZE_8                     (0LU << 4LU)
+#define WSPI_CFG_CMD_SIZE_16                    (1LU << 4LU)
+#define WSPI_CFG_CMD_SIZE_24                    (2LU << 4LU)
+#define WSPI_CFG_CMD_SIZE_32                    (3LU << 4LU)
+
+#define WSPI_CFG_ADDR_MODE_MASK                 (7LU << 8LU)
+#define WSPI_CFG_ADDR_MODE_NONE                 (0LU << 8LU)
+#define WSPI_CFG_ADDR_MODE_ONE_LINE             (1LU << 8LU)
+#define WSPI_CFG_ADDR_MODE_TWO_LINES            (2LU << 8LU)
+#define WSPI_CFG_ADDR_MODE_FOUR_LINES           (3LU << 8LU)
+#define WSPI_CFG_ADDR_MODE_EIGHT_LINES          (4LU << 8LU)
+
+#define WSPI_CFG_ADDR_DTR                       (1LU << 11LU)
+
+#define WSPI_CFG_ADDR_SIZE_MASK                 (3LU << 12LU)
+#define WSPI_CFG_ADDR_SIZE_8                    (0LU << 12LU)
+#define WSPI_CFG_ADDR_SIZE_16                   (1LU << 12LU)
+#define WSPI_CFG_ADDR_SIZE_24                   (2LU << 12LU)
+#define WSPI_CFG_ADDR_SIZE_32                   (3LU << 12LU)
+
+#define WSPI_CFG_ALT_MODE_MASK                  (7LU << 16LU)
+#define WSPI_CFG_ALT_MODE_NONE                  (0LU << 16LU)
+#define WSPI_CFG_ALT_MODE_ONE_LINE              (1LU << 16LU)
+#define WSPI_CFG_ALT_MODE_TWO_LINES             (2LU << 16LU)
+#define WSPI_CFG_ALT_MODE_FOUR_LINES            (3LU << 16LU)
+#define WSPI_CFG_ALT_MODE_EIGHT_LINES           (4LU << 16LU)
+
+#define WSPI_CFG_ALT_DTR                        (1LU << 19LU)
+
+#define WSPI_CFG_ALT_SIZE_MASK                  (3LU << 20LU)
+#define WSPI_CFG_ALT_SIZE_8                     (0LU << 20LU)
+#define WSPI_CFG_ALT_SIZE_16                    (1LU << 20LU)
+#define WSPI_CFG_ALT_SIZE_24                    (2LU << 20LU)
+#define WSPI_CFG_ALT_SIZE_32                    (3LU << 20LU)
+
+#define WSPI_CFG_DATA_MODE_MASK                 (7LU << 24LU)
+#define WSPI_CFG_DATA_MODE_NONE                 (0LU << 24LU)
+#define WSPI_CFG_DATA_MODE_ONE_LINE             (1LU << 24LU)
+#define WSPI_CFG_DATA_MODE_TWO_LINES            (2LU << 24LU)
+#define WSPI_CFG_DATA_MODE_FOUR_LINES           (3LU << 24LU)
+#define WSPI_CFG_DATA_MODE_EIGHT_LINES          (4LU << 24LU)
+
+#define WSPI_CFG_DATA_DTR                       (1LU << 27LU)
+
+#define WSPI_CFG_DQS_ENABLE                     (1LU << 29LU)
+
+#define WSPI_CFG_SIOO                           (1LU << 31LU)
+
+#define WSPI_CFG_ALL_DTR                        (WSPI_CFG_CMD_DTR   |       \
+                                                 WSPI_CFG_ADDR_DTR  |       \
+                                                 WSPI_CFG_ALT_DTR   |       \
+                                                 WSPI_CFG_DATA_DTR)
+/** @} */
+#endif /* WSPI_USE_DEFAULT_CFG_MASKS == TRUE */
 
 /**
  * @name    Macro Functions
@@ -278,16 +357,17 @@ typedef struct {
  * @brief   Wakes up the waiting thread.
  *
  * @param[in] wspip     pointer to the @p WSPIDriver object
+ * @param[in] msg       the wakeup message
  *
  * @notapi
  */
-#define _wspi_wakeup_isr(wspip) {                                           \
+#define _wspi_wakeup_isr(wspip, msg) {                                      \
   osalSysLockFromISR();                                                     \
-  osalThreadResumeI(&(wspip)->thread, MSG_OK);                              \
+  osalThreadResumeI(&(wspip)->thread, msg);                                 \
   osalSysUnlockFromISR();                                                   \
 }
 #else /* !WSPI_USE_WAIT */
-#define _wspi_wakeup_isr(wspip)
+#define _wspi_wakeup_isr(wspip, msg)
 #endif /* !WSPI_USE_WAIT */
 
 /**
@@ -313,7 +393,33 @@ typedef struct {
   }                                                                         \
   else                                                                      \
     (wspip)->state = WSPI_READY;                                            \
-  _wspi_wakeup_isr(wspip);                                                  \
+  _wspi_wakeup_isr(wspip, MSG_OK);                                          \
+}
+
+/**
+ * @brief   Common error ISR code.
+ * @details This code handles the portable part of the ISR code:
+ *          - Callback invocation.
+ *          - Waiting thread wakeup, if any.
+ *          - Driver state transitions.
+ *          .
+ * @note    This macro is meant to be used in the low level drivers
+ *          implementation only.
+ *
+ * @param[in] wspip     pointer to the @p WSPIDriver object
+ *
+ * @notapi
+ */
+#define _wspi_error_code(wspip) {                                           \
+  if ((wspip)->config->error_cb) {                                          \
+    (wspip)->state = WSPI_COMPLETE;                                         \
+    (wspip)->config->error_cb(wspip);                                       \
+    if ((wspip)->state == WSPI_COMPLETE)                                    \
+      (wspip)->state = WSPI_READY;                                          \
+  }                                                                         \
+  else                                                                      \
+    (wspip)->state = WSPI_READY;                                            \
+  _wspi_wakeup_isr(wspip, MSG_RESET);                                       \
 }
 /** @} */
 
@@ -334,10 +440,10 @@ extern "C" {
   void wspiStartReceive(WSPIDriver *wspip, const wspi_command_t *cmdp,
                         size_t n, uint8_t *rxbuf);
 #if WSPI_USE_WAIT == TRUE
-  void wspiCommand(WSPIDriver *wspip, const wspi_command_t *cmdp);
-  void wspiSend(WSPIDriver *wspip, const wspi_command_t *cmdp,
+  bool wspiCommand(WSPIDriver *wspip, const wspi_command_t *cmdp);
+  bool wspiSend(WSPIDriver *wspip, const wspi_command_t *cmdp,
                 size_t n, const uint8_t *txbuf);
-  void wspiReceive(WSPIDriver *wspip, const wspi_command_t *cmdp,
+  bool wspiReceive(WSPIDriver *wspip, const wspi_command_t *cmdp,
                    size_t n, uint8_t *rxbuf);
 #endif
 #if WSPI_SUPPORTS_MEMMAP == TRUE

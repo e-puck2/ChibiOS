@@ -15,8 +15,8 @@
 */
 
 /**
- * @file    STM32L4xx/hal_lld.c
- * @brief   STM32L4xx HAL subsystem low level driver source.
+ * @file    STM32L4xx+/hal_lld.c
+ * @brief   STM32L4xx+ HAL subsystem low level driver source.
  *
  * @addtogroup HAL
  * @{
@@ -34,7 +34,7 @@
 
 /**
  * @brief   CMSIS system core clock variable.
- * @note    It is declared in system_stm32f7xx.h.
+ * @note    It is declared in system_stm32l4xx.h.
  */
 uint32_t SystemCoreClock = STM32_HCLK;
 
@@ -92,6 +92,9 @@ static void hal_lld_backup_domain_init(void) {
     RCC->BDCR |= RCC_BDCR_RTCEN;
   }
 #endif /* HAL_USE_RTC */
+
+  /* Low speed output mode.*/
+  RCC->BDCR |= STM32_LSCOSEL;
 }
 
 /*===========================================================================*/
@@ -187,6 +190,9 @@ void stm32_clock_init(void) {
   while ((PWR->SR2 & PWR_SR2_VOSF) != 0)    /* Wait until regulator is      */
     ;                                       /* stable.                      */
 
+  /* Boost mode setting.*/
+  PWR->CR5 = STM32_R1MODE;
+
 #if STM32_HSI16_ENABLED
   /* HSI activation.*/
   RCC->CR |= RCC_CR_HSION;
@@ -194,13 +200,11 @@ void stm32_clock_init(void) {
     ;                                       /* Wait until HSI16 is stable.  */
 #endif
 
-#if STM32_CLOCK_HAS_HSI48
 #if STM32_HSI48_ENABLED
   /* HSI activation.*/
   RCC->CRRCR |= RCC_CRRCR_HSI48ON;
   while ((RCC->CRRCR & RCC_CRRCR_HSI48RDY) == 0)
     ;                                       /* Wait until HSI48 is stable.  */
-#endif
 #endif
 
 #if STM32_HSE_ENABLED
@@ -264,19 +268,11 @@ void stm32_clock_init(void) {
 
 #if STM32_ACTIVATE_PLL || STM32_ACTIVATE_PLLSAI1 || STM32_ACTIVATE_PLLSAI2
   /* PLLM and PLLSRC are common to all PLLs.*/
-#if defined(STM32L496xx) || defined(STM32L4A6xx)
   RCC->PLLCFGR = STM32_PLLPDIV | STM32_PLLR  |
                  STM32_PLLREN  | STM32_PLLQ  |
                  STM32_PLLQEN  | STM32_PLLP  |
                  STM32_PLLPEN  | STM32_PLLN  |
                  STM32_PLLM    | STM32_PLLSRC;
-#else
-  RCC->PLLCFGR = STM32_PLLR   | STM32_PLLREN |
-                 STM32_PLLQ   | STM32_PLLQEN |
-                 STM32_PLLP   | STM32_PLLPEN |
-                 STM32_PLLN   | STM32_PLLM   |
-                 STM32_PLLSRC;
-#endif
 #endif
 
 #if STM32_ACTIVATE_PLL
@@ -290,17 +286,11 @@ void stm32_clock_init(void) {
 
 #if STM32_ACTIVATE_PLLSAI1
   /* PLLSAI1 activation.*/
-#if defined(STM32L496xx) || defined(STM32L4A6xx)
   RCC->PLLSAI1CFGR = STM32_PLLSAI1PDIV | STM32_PLLSAI1R |
                      STM32_PLLSAI1REN  | STM32_PLLSAI1Q |
                      STM32_PLLSAI1QEN  | STM32_PLLSAI1P |
-                     STM32_PLLSAI1PEN  | STM32_PLLSAI1N;
-#else
-  RCC->PLLSAI1CFGR = STM32_PLLSAI1R | STM32_PLLSAI1REN |
-                     STM32_PLLSAI1Q | STM32_PLLSAI1QEN |
-                     STM32_PLLSAI1P | STM32_PLLSAI1PEN |
-                     STM32_PLLSAI1N;
-#endif
+                     STM32_PLLSAI1PEN  | STM32_PLLSAI1N |
+                     STM32_PLLSAI1M;
   RCC->CR |= RCC_CR_PLLSAI1ON;
 
   /* Waiting for PLL lock.*/
@@ -310,15 +300,10 @@ void stm32_clock_init(void) {
 
 #if STM32_ACTIVATE_PLLSAI2
   /* PLLSAI2 activation.*/
-#if defined(STM32L496xx) || defined(STM32L4A6xx)
   RCC->PLLSAI2CFGR = STM32_PLLSAI2PDIV | STM32_PLLSAI2R |
                      STM32_PLLSAI2REN  | STM32_PLLSAI2P |
-                     STM32_PLLSAI2PEN  | STM32_PLLSAI2N;
-#else
-  RCC->PLLSAI2CFGR = STM32_PLLSAI2R | STM32_PLLSAI2REN |
-                     STM32_PLLSAI2P | STM32_PLLSAI2PEN |
-                     STM32_PLLSAI2N;
-#endif
+                     STM32_PLLSAI2PEN  | STM32_PLLSAI2N |
+                     STM32_PLLSAI2M;
   RCC->CR |= RCC_CR_PLLSAI2ON;
 
   /* Waiting for PLL lock.*/
@@ -330,26 +315,38 @@ void stm32_clock_init(void) {
   RCC->CFGR = STM32_MCOPRE | STM32_MCOSEL | STM32_STOPWUCK |
               STM32_PPRE2  | STM32_PPRE1  | STM32_HPRE;
 
-  /* CCIPR register initialization, note, must take care of the _OFF
+  /* CCIPR register initialization.*/
+  {
+    uint32_t ccipr =                                      STM32_ADCSEL    |
+                     STM32_CLK48SEL   | STM32_LPTIM2SEL | STM32_LPTIM1SEL |
+                     STM32_I2C3SEL    | STM32_I2C2SEL   | STM32_I2C1SEL   |
+                     STM32_LPUART1SEL | STM32_UART5SEL  | STM32_UART4SEL  |
+                     STM32_USART3SEL  | STM32_USART2SEL | STM32_USART1SEL;
+    RCC->CCIPR = ccipr;
+  }
+
+  /* CCIPR2 register initialization, note, must take care of the _OFF
      pseudo settings.*/
   {
-    uint32_t ccipr = STM32_DFSDMSEL  | STM32_SWPMI1SEL | STM32_ADCSEL    |
-                     STM32_CLK48SEL  | STM32_LPTIM2SEL | STM32_LPTIM1SEL |
-                     STM32_I2C3SEL   | STM32_I2C2SEL   | STM32_I2C1SEL   |
-                     STM32_UART5SEL  | STM32_UART4SEL  | STM32_USART3SEL |
-                     STM32_USART2SEL | STM32_USART1SEL | STM32_LPUART1SEL;
+    uint32_t ccipr = STM32_OSPISEL    | STM32_PLLSAI2DIVR |
+                     STM32_SDMMCSEL   | STM32_DSISEL    | STM32_ADFSDMSEL |
+                     STM32_DFSDMSEL   | STM32_I2C4SEL;
 #if STM32_SAI2SEL != STM32_SAI2SEL_OFF
     ccipr |= STM32_SAI2SEL;
 #endif
 #if STM32_SAI1SEL != STM32_SAI1SEL_OFF
     ccipr |= STM32_SAI1SEL;
 #endif
-    RCC->CCIPR = ccipr;
+    RCC->CCIPR2 = ccipr;
   }
 
   /* Set flash WS's for SYSCLK source */
-  if (STM32_FLASHBITS > STM32_MSI_FLASHBITS)
+  if (STM32_FLASHBITS > STM32_MSI_FLASHBITS) {
     FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY_Msk) | STM32_FLASHBITS;
+    while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) !=
+           (STM32_FLASHBITS & FLASH_ACR_LATENCY_Msk)) {
+    }
+  }
 
   /* Switching to the configured SYSCLK source if it is different from MSI.*/
 #if (STM32_SW != STM32_SW_MSI)
@@ -360,8 +357,12 @@ void stm32_clock_init(void) {
 #endif
 
   /* Reduce the flash WS's for SYSCLK source if they are less than MSI WSs */
-  if (STM32_FLASHBITS < STM32_MSI_FLASHBITS)
+  if (STM32_FLASHBITS < STM32_MSI_FLASHBITS) {
     FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY_Msk) | STM32_FLASHBITS;
+    while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) !=
+           (STM32_FLASHBITS & FLASH_ACR_LATENCY_Msk)) {
+    }
+  }
 
 #endif /* STM32_NO_INIT */
 

@@ -3,11 +3,15 @@
 ifeq ($(USE_SMART_BUILD),yes)
 
 # Configuration files directory
-ifeq ($(CONFDIR),)
-  CONFDIR = .
+ifeq ($(CHCONFDIR),)
+  ifeq ($(CONFDIR),)
+    CHCONFDIR = .
+  else
+    CHCONFDIR := $(CONFDIR)
+  endif
 endif
 
-CHCONF := $(strip $(shell cat $(CONFDIR)/chconf.h | egrep -e "\#define"))
+CHCONF := $(strip $(shell cat $(CHCONFDIR)/chconf.h | egrep -e "\#define"))
 
 KERNSRC := $(CHIBIOS)/os/rt/src/chsys.c \
            $(CHIBIOS)/os/rt/src/chdebug.c \
@@ -68,4 +72,4 @@ ALLCSRC += $(KERNSRC)
 ALLINC  += $(KERNINC)
 
 # OS Library
-include $(CHIBIOS)/os/lib/lib.mk
+include $(CHIBIOS)/os/oslib/oslib.mk

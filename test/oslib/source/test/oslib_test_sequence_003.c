@@ -1,5 +1,5 @@
 /*
-    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2017 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,18 +21,18 @@
  * @file    oslib_test_sequence_003.c
  * @brief   Test Sequence 003 code.
  *
- * @page oslib_test_sequence_003 [3] Memory Heaps
+ * @page oslib_test_sequence_003 [3] Pipes
  *
  * File: @ref oslib_test_sequence_003.c
  *
  * <h2>Description</h2>
  * This sequence tests the ChibiOS library functionalities related to
- * memory heaps.
+ * pipes.
  *
  * <h2>Conditions</h2>
  * This sequence is only executed if the following preprocessor condition
  * evaluates to true:
- * - CH_CFG_USE_HEAP
+ * - CH_CFG_USE_PIPES
  * .
  *
  * <h2>Test Cases</h2>
@@ -41,217 +41,317 @@
  * .
  */
 
-#if (CH_CFG_USE_HEAP) || defined(__DOXYGEN__)
+#if (CH_CFG_USE_PIPES) || defined(__DOXYGEN__)
 
 /****************************************************************************
  * Shared code.
  ****************************************************************************/
 
-#define ALLOC_SIZE 16
-#define HEAP_SIZE (ALLOC_SIZE * 8)
+#include <string.h>
 
-static memory_heap_t test_heap;
-static uint8_t test_heap_buffer[HEAP_SIZE];
+#define PIPE_SIZE 16
+
+static uint8_t buffer[PIPE_SIZE];
+static PIPE_DECL(pipe1, buffer, PIPE_SIZE);
+
+static const uint8_t pipe_pattern[] = "0123456789ABCDEF";
 
 /****************************************************************************
  * Test cases.
  ****************************************************************************/
 
 /**
- * @page oslib_test_003_001 [3.1] Allocation and fragmentation
+ * @page oslib_test_003_001 [3.1] Pipes normal API, non-blocking tests
  *
  * <h2>Description</h2>
- * Series of allocations/deallocations are performed in carefully
- * designed sequences in order to stimulate all the possible code paths
- * inside the allocator. The test expects to find the heap back to the
- * initial status after each sequence.
+ * The pipe functionality is tested by loading and emptying it, all
+ * conditions are tested.
  *
  * <h2>Test Steps</h2>
- * - [3.1.1] Testing initial conditions, the heap must not be
- *   fragmented and one free block present.
- * - [3.1.2] Trying to allocate an block bigger than available space,
- *   an error is expected.
- * - [3.1.3] Single block allocation using chHeapAlloc() then the block
- *   is freed using chHeapFree(), must not fail.
- * - [3.1.4] Using chHeapStatus() to assess the heap state. There must
- *   be at least one free block of sufficient size.
- * - [3.1.5] Allocating then freeing in the same order.
- * - [3.1.6] Allocating then freeing in reverse order.
- * - [3.1.7] Small fragments handling. Checking the behavior when
- *   allocating blocks with size not multiple of alignment unit.
- * - [3.1.8] Skipping a fragment, the first fragment in the list is too
- *   small so the allocator must pick the second one.
- * - [3.1.9] Allocating the whole available space.
- * - [3.1.10] Testing final conditions. The heap geometry must be the
- *   same than the one registered at beginning.
+ * - [3.1.1] Resetting pipe.
+ * - [3.1.2] Writing data, must fail.
+ * - [3.1.3] Reading data, must fail.
+ * - [3.1.4] Reactivating pipe.
+ * - [3.1.5] Filling whole pipe.
+ * - [3.1.6] Emptying pipe.
+ * - [3.1.7] Small write.
+ * - [3.1.8] Filling remaining space.
+ * - [3.1.9] Small Read.
+ * - [3.1.10] Reading remaining data.
+ * - [3.1.11] Small Write.
+ * - [3.1.12] Small Read.
+ * - [3.1.13] Write wrapping buffer boundary.
+ * - [3.1.14] Read wrapping buffer boundary.
  * .
  */
 
 static void oslib_test_003_001_setup(void) {
-  chHeapObjectInit(&test_heap, test_heap_buffer, sizeof(test_heap_buffer));
+  chPipeObjectInit(&pipe1, buffer, PIPE_SIZE);
 }
 
 static void oslib_test_003_001_execute(void) {
-  void *p1, *p2, *p3;
-  size_t n, sz;
 
-  /* [3.1.1] Testing initial conditions, the heap must not be
-     fragmented and one free block present.*/
+  /* [3.1.1] Resetting pipe.*/
   test_set_step(1);
   {
-    test_assert(chHeapStatus(&test_heap, &sz, NULL) == 1, "heap fragmented");
-  }
+    chPipeReset(&pipe1);
 
-  /* [3.1.2] Trying to allocate an block bigger than available space,
-     an error is expected.*/
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
+  }
+  test_end_step(1);
+
+  /* [3.1.2] Writing data, must fail.*/
   test_set_step(2);
   {
-    p1 = chHeapAlloc(&test_heap, sizeof test_heap_buffer * 2);
-    test_assert(p1 == NULL, "allocation not failed");
-  }
+    size_t n;
 
-  /* [3.1.3] Single block allocation using chHeapAlloc() then the block
-     is freed using chHeapFree(), must not fail.*/
+    n = chPipeWriteTimeout(&pipe1, pipe_pattern, PIPE_SIZE, TIME_IMMEDIATE);
+    test_assert(n == 0, "not reset");
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
+  }
+  test_end_step(2);
+
+  /* [3.1.3] Reading data, must fail.*/
   test_set_step(3);
   {
-    p1 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    test_assert(p1 != NULL, "allocation failed");
-    chHeapFree(p1);
-  }
+    size_t n;
+    uint8_t buf[PIPE_SIZE];
 
-  /* [3.1.4] Using chHeapStatus() to assess the heap state. There must
-     be at least one free block of sufficient size.*/
+    n = chPipeReadTimeout(&pipe1, buf, PIPE_SIZE, TIME_IMMEDIATE);
+    test_assert(n == 0, "not reset");
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
+  }
+  test_end_step(3);
+
+  /* [3.1.4] Reactivating pipe.*/
   test_set_step(4);
   {
-    size_t total_size, largest_size;
-
-    n = chHeapStatus(&test_heap, &total_size, &largest_size);
-    test_assert(n == 1, "missing free block");
-    test_assert(total_size >= ALLOC_SIZE, "unexpected heap state");
-    test_assert(total_size == largest_size, "unexpected heap state");
+    chPipeResume(&pipe1);
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
   }
+  test_end_step(4);
 
-  /* [3.1.5] Allocating then freeing in the same order.*/
+  /* [3.1.5] Filling whole pipe.*/
   test_set_step(5);
   {
-    p1 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    p2 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    p3 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    chHeapFree(p1);                                 /* Does not merge.*/
-    chHeapFree(p2);                                 /* Merges backward.*/
-    chHeapFree(p3);                                 /* Merges both sides.*/
-    test_assert(chHeapStatus(&test_heap, &n, NULL) == 1, "heap fragmented");
-  }
+    size_t n;
 
-  /* [3.1.6] Allocating then freeing in reverse order.*/
+    n = chPipeWriteTimeout(&pipe1, pipe_pattern, PIPE_SIZE, TIME_IMMEDIATE);
+    test_assert(n == PIPE_SIZE, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == PIPE_SIZE),
+                "invalid pipe state");
+  }
+  test_end_step(5);
+
+  /* [3.1.6] Emptying pipe.*/
   test_set_step(6);
   {
-    p1 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    p2 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    p3 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    chHeapFree(p3);                                 /* Merges forward.*/
-    chHeapFree(p2);                                 /* Merges forward.*/
-    chHeapFree(p1);                                 /* Merges forward.*/
-    test_assert(chHeapStatus(&test_heap, &n, NULL) == 1, "heap fragmented");
-  }
+    size_t n;
+    uint8_t buf[PIPE_SIZE];
 
-  /* [3.1.7] Small fragments handling. Checking the behavior when
-     allocating blocks with size not multiple of alignment unit.*/
+    n = chPipeReadTimeout(&pipe1, buf, PIPE_SIZE, TIME_IMMEDIATE);
+    test_assert(n == PIPE_SIZE, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
+    test_assert(memcmp(pipe_pattern, buf, PIPE_SIZE) == 0, "content mismatch");
+  }
+  test_end_step(6);
+
+  /* [3.1.7] Small write.*/
   test_set_step(7);
   {
-    p1 = chHeapAlloc(&test_heap, ALLOC_SIZE + 1);
-    p2 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    chHeapFree(p1);
-    test_assert(chHeapStatus(&test_heap, &n, NULL) == 2, "invalid state");
-    p1 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    /* Note, the first situation happens when the alignment size is smaller
-       than the header size, the second in the other cases.*/
-    test_assert((chHeapStatus(&test_heap, &n, NULL) == 1) ||
-                (chHeapStatus(&test_heap, &n, NULL) == 2), "heap fragmented");
-    chHeapFree(p2);
-    chHeapFree(p1);
-    test_assert(chHeapStatus(&test_heap, &n, NULL) == 1, "heap fragmented");
-  }
+    size_t n;
 
-  /* [3.1.8] Skipping a fragment, the first fragment in the list is too
-     small so the allocator must pick the second one.*/
+    n = chPipeWriteTimeout(&pipe1, pipe_pattern, 4, TIME_IMMEDIATE);
+    test_assert(n == 4, "wrong size");
+    test_assert((pipe1.rdptr != pipe1.wrptr) &&
+                (pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.cnt == 4),
+                "invalid pipe state");
+  }
+  test_end_step(7);
+
+  /* [3.1.8] Filling remaining space.*/
   test_set_step(8);
   {
-    p1 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    p2 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    chHeapFree(p1);
-    test_assert( chHeapStatus(&test_heap, &n, NULL) == 2, "invalid state");
-    p1 = chHeapAlloc(&test_heap, ALLOC_SIZE * 2); /* Skips first fragment.*/
-    chHeapFree(p1);
-    chHeapFree(p2);
-    test_assert(chHeapStatus(&test_heap, &n, NULL) == 1, "heap fragmented");
-  }
+    size_t n;
 
-  /* [3.1.9] Allocating the whole available space.*/
+    n = chPipeWriteTimeout(&pipe1, pipe_pattern, PIPE_SIZE - 4, TIME_IMMEDIATE);
+    test_assert(n == PIPE_SIZE - 4, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == PIPE_SIZE),
+                "invalid pipe state");
+  }
+  test_end_step(8);
+
+  /* [3.1.9] Small Read.*/
   test_set_step(9);
   {
-    (void)chHeapStatus(&test_heap, &n, NULL);
-    p1 = chHeapAlloc(&test_heap, n);
-    test_assert(p1 != NULL, "allocation failed");
-    test_assert(chHeapStatus(&test_heap, NULL, NULL) == 0, "not empty");
-    chHeapFree(p1);
-  }
+    size_t n;
+    uint8_t buf[PIPE_SIZE];
 
-  /* [3.1.10] Testing final conditions. The heap geometry must be the
-     same than the one registered at beginning.*/
+    n = chPipeReadTimeout(&pipe1, buf, 4, TIME_IMMEDIATE);
+    test_assert(n == 4, "wrong size");
+    test_assert((pipe1.rdptr != pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == PIPE_SIZE - 4),
+                "invalid pipe state");
+    test_assert(memcmp(pipe_pattern, buf, 4) == 0, "content mismatch");
+  }
+  test_end_step(9);
+
+  /* [3.1.10] Reading remaining data.*/
   test_set_step(10);
   {
-    test_assert(chHeapStatus(&test_heap, &n, NULL) == 1, "heap fragmented");
-    test_assert(n == sz, "size changed");
+    size_t n;
+    uint8_t buf[PIPE_SIZE];
+
+    n = chPipeReadTimeout(&pipe1, buf, PIPE_SIZE - 4, TIME_IMMEDIATE);
+    test_assert(n == PIPE_SIZE - 4, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
+    test_assert(memcmp(pipe_pattern, buf, PIPE_SIZE - 4) == 0, "content mismatch");
   }
+  test_end_step(10);
+
+  /* [3.1.11] Small Write.*/
+  test_set_step(11);
+  {
+    size_t n;
+
+    n = chPipeWriteTimeout(&pipe1, pipe_pattern, 5, TIME_IMMEDIATE);
+    test_assert(n == 5, "wrong size");
+    test_assert((pipe1.rdptr != pipe1.wrptr) &&
+                (pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.cnt == 5),
+                "invalid pipe state");
+  }
+  test_end_step(11);
+
+  /* [3.1.12] Small Read.*/
+  test_set_step(12);
+  {
+    size_t n;
+    uint8_t buf[PIPE_SIZE];
+
+    n = chPipeReadTimeout(&pipe1, buf, 5, TIME_IMMEDIATE);
+    test_assert(n == 5, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.wrptr) &&
+                (pipe1.wrptr != pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
+    test_assert(memcmp(pipe_pattern, buf, 5) == 0, "content mismatch");
+  }
+  test_end_step(12);
+
+  /* [3.1.13] Write wrapping buffer boundary.*/
+  test_set_step(13);
+  {
+    size_t n;
+
+    n = chPipeWriteTimeout(&pipe1, pipe_pattern, PIPE_SIZE, TIME_IMMEDIATE);
+    test_assert(n == PIPE_SIZE, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.wrptr) &&
+                (pipe1.wrptr != pipe1.buffer) &&
+                (pipe1.cnt == PIPE_SIZE),
+                "invalid pipe state");
+  }
+  test_end_step(13);
+
+  /* [3.1.14] Read wrapping buffer boundary.*/
+  test_set_step(14);
+  {
+    size_t n;
+    uint8_t buf[PIPE_SIZE];
+
+    n = chPipeReadTimeout(&pipe1, buf, PIPE_SIZE, TIME_IMMEDIATE);
+    test_assert(n == PIPE_SIZE, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.wrptr) &&
+                (pipe1.wrptr != pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
+    test_assert(memcmp(pipe_pattern, buf, PIPE_SIZE) == 0, "content mismatch");
+  }
+  test_end_step(14);
 }
 
 static const testcase_t oslib_test_003_001 = {
-  "Allocation and fragmentation",
+  "Pipes normal API, non-blocking tests",
   oslib_test_003_001_setup,
   NULL,
   oslib_test_003_001_execute
 };
 
 /**
- * @page oslib_test_003_002 [3.2] Default Heap
+ * @page oslib_test_003_002 [3.2] Pipe timeouts
  *
  * <h2>Description</h2>
- * The default heap is pre-allocated in the system. We test base
- * functionality.
+ * The pipe API is tested for timeouts.
  *
  * <h2>Test Steps</h2>
- * - [3.2.1] Single block allocation using chHeapAlloc() then the block
- *   is freed using chHeapFree(), must not fail.
- * - [3.2.2] Testing allocation failure.
+ * - [3.2.1] Reading while pipe is empty.
+ * - [3.2.2] Writing a string larger than pipe buffer.
  * .
  */
 
-static void oslib_test_003_002_execute(void) {
-  void *p1;
-  size_t total_size, largest_size;
+static void oslib_test_003_002_setup(void) {
+  chPipeObjectInit(&pipe1, buffer, PIPE_SIZE / 2);
+}
 
-  /* [3.2.1] Single block allocation using chHeapAlloc() then the block
-     is freed using chHeapFree(), must not fail.*/
+static void oslib_test_003_002_execute(void) {
+
+  /* [3.2.1] Reading while pipe is empty.*/
   test_set_step(1);
   {
-    (void)chHeapStatus(NULL, &total_size, &largest_size);
-    p1 = chHeapAlloc(&test_heap, ALLOC_SIZE);
-    test_assert(p1 != NULL, "allocation failed");
-    chHeapFree(p1);
-  }
+    size_t n;
+    uint8_t buf[PIPE_SIZE];
 
-  /* [3.2.2] Testing allocation failure.*/
+    n = chPipeReadTimeout(&pipe1, buf, PIPE_SIZE, TIME_IMMEDIATE);
+    test_assert(n == 0, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.buffer) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == 0),
+                "invalid pipe state");
+  }
+  test_end_step(1);
+
+  /* [3.2.2] Writing a string larger than pipe buffer.*/
   test_set_step(2);
   {
-    p1 = chHeapAlloc(NULL, (size_t)-256);
-    test_assert(p1 == NULL, "allocation not failed");
+    size_t n;
+
+    n = chPipeWriteTimeout(&pipe1, pipe_pattern, PIPE_SIZE, TIME_IMMEDIATE);
+    test_assert(n == PIPE_SIZE / 2, "wrong size");
+    test_assert((pipe1.rdptr == pipe1.wrptr) &&
+                (pipe1.wrptr == pipe1.buffer) &&
+                (pipe1.cnt == PIPE_SIZE / 2),
+                "invalid pipe state");
   }
+  test_end_step(2);
 }
 
 static const testcase_t oslib_test_003_002 = {
-  "Default Heap",
-  NULL,
+  "Pipe timeouts",
+  oslib_test_003_002_setup,
   NULL,
   oslib_test_003_002_execute
 };
@@ -270,11 +370,11 @@ const testcase_t * const oslib_test_sequence_003_array[] = {
 };
 
 /**
- * @brief   Memory Heaps.
+ * @brief   Pipes.
  */
 const testsequence_t oslib_test_sequence_003 = {
-  "Memory Heaps",
+  "Pipes",
   oslib_test_sequence_003_array
 };
 
-#endif /* CH_CFG_USE_HEAP */
+#endif /* CH_CFG_USE_PIPES */

@@ -80,8 +80,8 @@ void halInit(void) {
 #if (HAL_USE_DAC == TRUE) || defined(__DOXYGEN__)
   dacInit();
 #endif
-#if (HAL_USE_EXT == TRUE) || defined(__DOXYGEN__)
-  extInit();
+#if (HAL_USE_EFL == TRUE) || defined(__DOXYGEN__)
+  eflInit();
 #endif
 #if (HAL_USE_GPT == TRUE) || defined(__DOXYGEN__)
   gptInit();
@@ -101,9 +101,6 @@ void halInit(void) {
 #if (HAL_USE_PWM == TRUE) || defined(__DOXYGEN__)
   pwmInit();
 #endif
-#if (HAL_USE_QSPI == TRUE) || defined(__DOXYGEN__)
-  qspiInit();
-#endif
 #if (HAL_USE_SERIAL == TRUE) || defined(__DOXYGEN__)
   sdInit();
 #endif
@@ -112,6 +109,9 @@ void halInit(void) {
 #endif
 #if (HAL_USE_SPI == TRUE) || defined(__DOXYGEN__)
   spiInit();
+#endif
+#if (HAL_USE_TRNG == TRUE) || defined(__DOXYGEN__)
+  trngInit();
 #endif
 #if (HAL_USE_UART == TRUE) || defined(__DOXYGEN__)
   uartInit();

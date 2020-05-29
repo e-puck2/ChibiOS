@@ -53,7 +53,7 @@ bool test_global_fail;
 
 static bool test_local_fail;
 static const char *test_failure_message;
-static char test_tokens_buffer[TEST_MAX_TOKENS];
+static char test_tokens_buffer[TEST_CFG_MAX_TOKENS];
 static char *test_tokp;
 static BaseSequentialStream *test_chp;
 
@@ -202,7 +202,7 @@ void test_println(const char *msgp) {
 void test_emit_token(char token) {
 
   osalSysLock();
-  if (test_tokp < &test_tokens_buffer[TEST_MAX_TOKENS])
+  if (test_tokp < &test_tokens_buffer[TEST_CFG_MAX_TOKENS])
     *test_tokp++ = token;
   osalSysUnlock();
 }
@@ -216,7 +216,7 @@ void test_emit_token(char token) {
  */
 void test_emit_token_i(char token) {
 
-  if (test_tokp < &test_tokens_buffer[TEST_MAX_TOKENS])
+  if (test_tokp < &test_tokens_buffer[TEST_CFG_MAX_TOKENS])
     *test_tokp++ = token;
 }
 
@@ -255,6 +255,27 @@ msg_t test_execute(BaseSequentialStream *stream, const testsuite_t *tsp) {
   test_print("*** Test Board:   ");
   test_println(BOARD_NAME);
 #endif
+#if TEST_CFG_SIZE_REPORT == TRUE
+  {
+    extern uint8_t __text_base__,   __text_end__,
+                   __rodata_base__, __rodata_end__,
+                   __data_base__,   __data_end__,
+                   __bss_base__,    __bss_end__;
+    test_println("***");
+    test_print("*** Text size:    ");
+    test_printn((uint32_t)(&__text_end__ - &__text_base__));
+    test_println(" bytes");
+    test_print("*** RO data size: ");
+    test_printn((uint32_t)(&__rodata_end__ - &__rodata_base__));
+    test_println(" bytes");
+    test_print("*** Data size:    ");
+    test_printn((uint32_t)(&__data_end__ - &__data_base__));
+    test_println(" bytes");
+    test_print("*** BSS size:     ");
+    test_printn((uint32_t)(&__bss_end__ - &__bss_base__));
+    test_println(" bytes");
+  }
+#endif
 #if defined(TEST_REPORT_HOOK_HEADER)
   TEST_REPORT_HOOK_HEADER
 #endif
@@ -263,7 +284,7 @@ msg_t test_execute(BaseSequentialStream *stream, const testsuite_t *tsp) {
   test_global_fail = false;
   tseq = 0;
   while (tsp->sequences[tseq] != NULL) {
-#if TEST_SHOW_SEQUENCES == TRUE
+#if TEST_CFG_SHOW_SEQUENCES == TRUE
     print_fat_line();
     test_print("=== Test Sequence ");
     test_printn(tseq + 1);
@@ -281,8 +302,8 @@ msg_t test_execute(BaseSequentialStream *stream, const testsuite_t *tsp) {
       test_print(" (");
       test_print(tsp->sequences[tseq]->cases[tcase]->name);
       test_println(")");
-#if TEST_DELAY_BETWEEN_TESTS > 0
-      osalThreadSleepMilliseconds(TEST_DELAY_BETWEEN_TESTS);
+#if TEST_CFG_DELAY_BETWEEN_TESTS > 0
+      osalThreadSleepMilliseconds(TEST_CFG_DELAY_BETWEEN_TESTS);
 #endif
       execute_test(tsp->sequences[tseq]->cases[tcase]);
       if (test_local_fail) {

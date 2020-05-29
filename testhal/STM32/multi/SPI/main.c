@@ -32,7 +32,15 @@ CC_ALIGN(32) static uint8_t rxbuf[512];
  */
 void spi_circular_cb(SPIDriver *spip) {
 
-  if(spip->state == SPI_COMPLETE) {
+#if SPI_SUPPORTS_CIRCULAR == TRUE
+    if (palReadLine(PORTAB_LINE_BUTTON) == PORTAB_BUTTON_PRESSED) {
+      osalSysLockFromISR();
+      spiAbortI(&PORTAB_SPI1);
+      osalSysUnlockFromISR();
+    }
+#endif
+
+  if (spiIsBufferComplete(spip)) {
     /* 2nd half.*/
     palWriteLine(PORTAB_LINE_LED1, PORTAB_LED_OFF);
   }
@@ -58,9 +66,15 @@ static THD_FUNCTION(spi_thread_1, p) {
     spiSelect(&PORTAB_SPI1);            /* Slave Select assertion.          */
     spiExchange(&PORTAB_SPI1, 512,
                 txbuf, rxbuf);          /* Atomic transfer operations.      */
+    spiExchange(&PORTAB_SPI1, 127,
+                txbuf, rxbuf);          /* Atomic transfer operations.      */
+    spiExchange(&PORTAB_SPI1, 64,
+                txbuf, rxbuf);          /* Atomic transfer operations.      */
+    spiExchange(&PORTAB_SPI1, 1,
+                txbuf, rxbuf);          /* Atomic transfer operations.      */
     spiUnselect(&PORTAB_SPI1);          /* Slave Select de-assertion.       */
-    cacheBufferInvalidate(&txbuf[0],    /* Cache invalidation over the      */
-                          sizeof txbuf);/* buffer.                          */
+    cacheBufferInvalidate(&rxbuf[0],    /* Cache invalidation over the      */
+                          sizeof rxbuf);/* buffer.                          */
     spiReleaseBus(&PORTAB_SPI1);        /* Ownership release.               */
   }
 }
@@ -80,9 +94,15 @@ static THD_FUNCTION(spi_thread_2, p) {
     spiSelect(&PORTAB_SPI1);            /* Slave Select assertion.          */
     spiExchange(&PORTAB_SPI1, 512,
                 txbuf, rxbuf);          /* Atomic transfer operations.      */
+    spiExchange(&PORTAB_SPI1, 127,
+                txbuf, rxbuf);          /* Atomic transfer operations.      */
+    spiExchange(&PORTAB_SPI1, 64,
+                txbuf, rxbuf);          /* Atomic transfer operations.      */
+    spiExchange(&PORTAB_SPI1, 1,
+                txbuf, rxbuf);          /* Atomic transfer operations.      */
     spiUnselect(&PORTAB_SPI1);          /* Slave Select de-assertion.       */
-    cacheBufferInvalidate(&txbuf[0],    /* Cache invalidation over the      */
-                          sizeof txbuf);/* buffer.                          */
+    cacheBufferInvalidate(&rxbuf[0],    /* Cache invalidation over the      */
+                          sizeof rxbuf);/* buffer.                          */
     spiReleaseBus(&PORTAB_SPI1);        /* Ownership release.               */
   }
 }
@@ -97,11 +117,6 @@ static THD_FUNCTION(Thread1, arg) {
   while (true) {
     bool key_pressed = palReadLine(PORTAB_LINE_BUTTON) == PORTAB_BUTTON_PRESSED;
     systime_t time = key_pressed ? 250 : 500;
-#if SPI_SUPPORTS_CIRCULAR == TRUE
-    if (key_pressed) {
-      spiAbort(&PORTAB_SPI1);
-    }
-#endif
 #if defined(PORTAB_LINE_LED2)
     palToggleLine(PORTAB_LINE_LED2);
 #endif
@@ -144,15 +159,15 @@ int main(void) {
 
 #if SPI_SUPPORTS_CIRCULAR == TRUE
   /*
-   * Starting a continous operation for test.
+   * Starting a continuous operation for test.
    */
   spiStart(&PORTAB_SPI1, &c_spicfg);  /* Setup transfer parameters.       */
   spiSelect(&PORTAB_SPI1);            /* Slave Select assertion.          */
   spiExchange(&PORTAB_SPI1, 512,
               txbuf, rxbuf);          /* Atomic transfer operations.      */
   spiUnselect(&PORTAB_SPI1);          /* Slave Select de-assertion.       */
-  cacheBufferInvalidate(&txbuf[0],    /* Cache invalidation over the      */
-                        sizeof txbuf);/* buffer.                          */
+  cacheBufferInvalidate(&rxbuf[0],    /* Cache invalidation over the      */
+                        sizeof rxbuf);/* buffer.                          */
 #endif
 
   /*

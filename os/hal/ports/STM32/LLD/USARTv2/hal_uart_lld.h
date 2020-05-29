@@ -133,14 +133,6 @@
 #endif
 
 /**
- * @brief   USART3..8 interrupt priority level setting.
- * @note    Only valid on those devices with a shared IRQ.
- */
-#if !defined(STM32_UART_USART3_8_IRQ_PRIORITY) || defined(__DOXYGEN__)
-#define STM32_UART_USART3_8_IRQ_PRIORITY    12
-#endif
-
-/**
  * @brief   UART4 interrupt priority level setting.
  */
 #if !defined(STM32_UART_UART4_IRQ_PRIORITY) || defined(__DOXYGEN__)
@@ -304,57 +296,55 @@
 #error "UART driver activated but no USART/UART peripheral assigned"
 #endif
 
-#if STM32_UART_USE_USART1 &&                                                \
+#if !defined(STM32_USART1_SUPPRESS_ISR) &&                                  \
+    STM32_UART_USE_USART1 &&                                                \
     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_USART1_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to USART1"
 #endif
 
-#if STM32_UART_USE_USART2 &&                                                \
+#if !defined(STM32_USART2_SUPPRESS_ISR) &&                                  \
+    STM32_UART_USE_USART2 &&                                                \
     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_USART2_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to USART2"
 #endif
 
-#if defined(STM32_USART3_8_HANDLER)
-
-#if (STM32_UART_USE_USART3 || STM32_UART_USE_UART4  ||                      \
-     STM32_UART_USE_UART5  || STM32_UART_USE_USART6 ||                      \
-     STM32_UART_USE_UART7  || STM32_UART_USE_UART8) &&                      \
-     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_SERIAL_USART3_8_PRIORITY)
-#error "Invalid IRQ priority assigned to USART3..8"
-#endif
-
-#else /* !defined(STM32_USART3_8_HANDLER) */
-
-#if STM32_UART_USE_USART3 &&                                                \
+#if !defined(STM32_USART3_SUPPRESS_ISR) &&                                  \
+    STM32_UART_USE_USART3 &&                                                \
     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_USART3_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to USART3"
 #endif
 
-#if STM32_UART_USE_UART4 &&                                                 \
+#if !defined(STM32_UART4_SUPPRESS_ISR) &&                                   \
+    STM32_UART_USE_UART4 &&                                                 \
     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_UART4_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to UART4"
 #endif
 
-#if STM32_UART_USE_UART5 &&                                                 \
+#if !defined(STM32_UART5_SUPPRESS_ISR) &&                                   \
+    STM32_UART_USE_UART5 &&                                                 \
     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_UART5_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to UART5"
 #endif
 
-#if STM32_UART_USE_USART6 &&                                                \
+#if !defined(STM32_USART6_SUPPRESS_ISR) &&                                  \
+    STM32_UART_USE_USART6 &&                                                \
     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_USART6_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to USART6"
 #endif
 
-#if STM32_UART_USE_UART7 &&                                                 \
+#if !defined(STM32_UART7_SUPPRESS_ISR) &&                                   \
+    STM32_UART_USE_UART7 &&                                                 \
     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_UART7_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to UART7"
 #endif
 
-#if STM32_UART_USE_UART8 &&                                                \
+#if !defined(STM32_UART8_SUPPRESS_ISR) &&                                   \
+    STM32_UART_USE_UART8 &&                                                 \
     !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_UART8_IRQ_PRIORITY)
 #error "Invalid IRQ priority assigned to UART8"
 #endif
 
+/* Check on DMA priorities.*/
 #if STM32_UART_USE_USART1 &&                                                \
     !STM32_DMA_IS_VALID_PRIORITY(STM32_UART_USART1_DMA_PRIORITY)
 #error "Invalid DMA priority assigned to USART1"
@@ -390,16 +380,11 @@
 #error "Invalid DMA priority assigned to UART7"
 #endif
 
-#endif /* !defined(STM32_USART3_8_HANDLER) */
-
 #if STM32_UART_USE_UART8 &&                                                 \
     !STM32_DMA_IS_VALID_PRIORITY(STM32_UART_UART8_DMA_PRIORITY)
 #error "Invalid DMA priority assigned to UART8"
 #endif
 
-/* The following checks are only required when there is a DMA able to
-   reassign streams to different channels.*/
-#if STM32_ADVANCED_DMA
 /* Check on the presence of the DMA streams settings in mcuconf.h.*/
 #if STM32_UART_USE_USART1 && (!defined(STM32_UART_USART1_RX_DMA_STREAM) ||  \
                               !defined(STM32_UART_USART1_TX_DMA_STREAM))
@@ -443,6 +428,90 @@
 
 /* Check on the validity of the assigned DMA channels.*/
 #if STM32_UART_USE_USART1 &&                                                \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_USART1_RX_DMA_STREAM)
+#error "Invalid DMA channel assigned to USART1 RX"
+#endif
+
+#if STM32_UART_USE_USART1 &&                                                \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_USART1_TX_DMA_STREAM)
+#error "Invalid DMA channel assigned to USART1 TX"
+#endif
+
+#if STM32_UART_USE_USART2 &&                                                \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_USART2_RX_DMA_STREAM)
+#error "Invalid DMA channel assigned to USART2 RX"
+#endif
+
+#if STM32_UART_USE_USART2 &&                                                \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_USART2_TX_DMA_STREAM)
+#error "Invalid DMA channel assigned to USART2 TX"
+#endif
+
+#if STM32_UART_USE_USART3 &&                                                \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_USART3_RX_DMA_STREAM)
+#error "Invalid DMA channel assigned to USART3 RX"
+#endif
+
+#if STM32_UART_USE_USART3 &&                                                \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_USART3_TX_DMA_STREAM)
+#error "Invalid DMA channel assigned to USART3 TX"
+#endif
+
+#if STM32_UART_USE_UART4 &&                                                 \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_UART4_RX_DMA_STREAM)
+#error "Invalid DMA channel assigned to UART4 RX"
+#endif
+
+#if STM32_UART_USE_UART4 &&                                                 \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_UART4_TX_DMA_STREAM)
+#error "Invalid DMA channel assigned to UART4 TX"
+#endif
+
+#if STM32_UART_USE_UART5 &&                                                 \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_UART5_RX_DMA_STREAM)
+#error "Invalid DMA channel assigned to UART5 RX"
+#endif
+
+#if STM32_UART_USE_UART5 &&                                                 \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_UART5_TX_DMA_STREAM)
+#error "Invalid DMA channel assigned to UART5 TX"
+#endif
+
+#if STM32_UART_USE_USART6 &&                                                \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_USART6_RX_DMA_STREAM)
+#error "Invalid DMA channel assigned to USART6 RX"
+#endif
+
+#if STM32_UART_USE_USART6 &&                                                \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_USART6_TX_DMA_STREAM)
+#error "Invalid DMA channel assigned to USART6 TX"
+#endif
+
+#if STM32_UART_USE_UART7 &&                                                 \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_UART7_RX_DMA_STREAM)
+#error "Invalid DMA channel assigned to UART7 RX"
+#endif
+
+#if STM32_UART_USE_UART7 &&                                                 \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_UART7_TX_DMA_STREAM)
+#error "Invalid DMA channel assigned to UART7 TX"
+#endif
+
+#if STM32_UART_USE_UART8 &&                                                 \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_UART8_RX_DMA_STREAM)
+#error "Invalid DMA channel assigned to UART8 RX"
+#endif
+
+#if STM32_UART_USE_UART8 &&                                                 \
+    !STM32_DMA_IS_VALID_STREAM(STM32_UART_UART8_TX_DMA_STREAM)
+#error "Invalid DMA channel assigned to UART8 TX"
+#endif
+
+/* Devices without DMAMUX require an additional check.*/
+#if STM32_ADVANCED_DMA && !STM32_DMA_SUPPORTS_DMAMUX
+
+/* Check on the validity of the assigned DMA channels.*/
+#if STM32_UART_USE_USART1 &&                                                \
     !STM32_DMA_IS_VALID_ID(STM32_UART_USART1_RX_DMA_STREAM,                 \
                            STM32_USART1_RX_DMA_MSK)
 #error "invalid DMA stream associated to USART1 RX"
@@ -478,26 +547,26 @@
 #error "invalid DMA stream associated to USART3 TX"
 #endif
 
-#if STM32_UART_USE_UART4 &&                                                \
-    !STM32_DMA_IS_VALID_ID(STM32_UART_UART4_RX_DMA_STREAM,                 \
+#if STM32_UART_USE_UART4 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART4_RX_DMA_STREAM,                  \
                            STM32_UART4_RX_DMA_MSK)
 #error "invalid DMA stream associated to UART4 RX"
 #endif
 
-#if STM32_UART_USE_UART4 &&                                                \
-    !STM32_DMA_IS_VALID_ID(STM32_UART_UART4_TX_DMA_STREAM,                 \
+#if STM32_UART_USE_UART4 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART4_TX_DMA_STREAM,                  \
                            STM32_UART4_TX_DMA_MSK)
 #error "invalid DMA stream associated to UART4 TX"
 #endif
 
-#if STM32_UART_USE_UART5 &&                                                \
-    !STM32_DMA_IS_VALID_ID(STM32_UART_UART5_RX_DMA_STREAM,                 \
+#if STM32_UART_USE_UART5 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART5_RX_DMA_STREAM,                  \
                            STM32_UART5_RX_DMA_MSK)
 #error "invalid DMA stream associated to UART5 RX"
 #endif
 
-#if STM32_UART_USE_UART5 &&                                                \
-    !STM32_DMA_IS_VALID_ID(STM32_UART_UART5_TX_DMA_STREAM,                 \
+#if STM32_UART_USE_UART5 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART5_TX_DMA_STREAM,                  \
                            STM32_UART5_TX_DMA_MSK)
 #error "invalid DMA stream associated to UART5 TX"
 #endif
@@ -514,30 +583,31 @@
 #error "invalid DMA stream associated to USART6 TX"
 #endif
 
-#if STM32_UART_USE_UART7 &&                                                \
-    !STM32_DMA_IS_VALID_ID(STM32_UART_UART7_RX_DMA_STREAM,                 \
+#if STM32_UART_USE_UART7 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART7_RX_DMA_STREAM,                  \
                            STM32_UART7_RX_DMA_MSK)
 #error "invalid DMA stream associated to UART7 RX"
 #endif
 
-#if STM32_UART_USE_UART7 &&                                                \
-    !STM32_DMA_IS_VALID_ID(STM32_UART_UART7_TX_DMA_STREAM,                 \
+#if STM32_UART_USE_UART7 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART7_TX_DMA_STREAM,                  \
                            STM32_UART7_TX_DMA_MSK)
 #error "invalid DMA stream associated to UART7 TX"
 #endif
 
-#if STM32_UART_USE_UART8 &&                                                \
-    !STM32_DMA_IS_VALID_ID(STM32_UART_UART8_RX_DMA_STREAM,                 \
+#if STM32_UART_USE_UART8 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART8_RX_DMA_STREAM,                  \
                            STM32_UART8_RX_DMA_MSK)
 #error "invalid DMA stream associated to UART8 RX"
 #endif
 
-#if STM32_UART_USE_UART8 &&                                                \
-    !STM32_DMA_IS_VALID_ID(STM32_UART_UART8_TX_DMA_STREAM,                 \
+#if STM32_UART_USE_UART8 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART8_TX_DMA_STREAM,                  \
                            STM32_UART8_TX_DMA_MSK)
 #error "invalid DMA stream associated to UART8 TX"
 #endif
-#endif /* STM32_ADVANCED_DMA */
+
+#endif /* STM32_ADVANCED_DMA && !STM32_DMA_SUPPORTS_DMAMUX */
 
 #if !defined(STM32_DMA_REQUIRED)
 #define STM32_DMA_REQUIRED
@@ -689,9 +759,13 @@ struct UARTDriver {
    */
   uint32_t                  clock;
   /**
-   * @brief   DMA mode bit mask.
+   * @brief   Receive DMA mode bit mask.
    */
-  uint32_t                  dmamode;
+  uint32_t                  dmarxmode;
+  /**
+   * @brief   Send DMA mode bit mask.
+   */
+  uint32_t                  dmatxmode;
   /**
    * @brief   Receive DMA channel.
    */
@@ -756,6 +830,7 @@ extern "C" {
   size_t uart_lld_stop_send(UARTDriver *uartp);
   void uart_lld_start_receive(UARTDriver *uartp, size_t n, void *rxbuf);
   size_t uart_lld_stop_receive(UARTDriver *uartp);
+  void uart_lld_serve_interrupt(UARTDriver *uartp);
 #ifdef __cplusplus
 }
 #endif

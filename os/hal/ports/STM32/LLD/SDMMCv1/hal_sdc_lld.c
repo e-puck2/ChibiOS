@@ -88,21 +88,10 @@ SDCDriver SDCD2;
 /* Driver local variables and types.                                         */
 /*===========================================================================*/
 
-#if STM32_SDC_SDMMC_UNALIGNED_SUPPORT
-/**
- * @brief   Buffer for temporary storage during unaligned transfers.
- */
-static union {
-  uint32_t  alignment;
-  uint8_t   buf[MMCSD_BLOCK_SIZE];
-} u;
-#endif /* STM32_SDC_SDMMC_UNALIGNED_SUPPORT */
-
 /**
  * @brief   SDIO default configuration.
  */
 static const SDCConfig sdc_default_cfg = {
-  NULL,
   SDC_MODE_4BIT
 };
 
@@ -150,7 +139,7 @@ static bool sdc_lld_prepare_read_bytes(SDCDriver *sdcp,
 
   /* Transaction starts just after DTEN bit setting.*/
   sdcp->sdmmc->DCTRL = SDMMC_DCTRL_DTDIR |
-                       SDMMC_DCTRL_DTMODE |   /* multibyte data transfer */
+                       SDMMC_DCTRL_DTMODE |   /* Multibyte data transfer.*/
                        SDMMC_DCTRL_DMAEN |
                        SDMMC_DCTRL_DTEN;
 
@@ -397,7 +386,7 @@ void sdc_lld_init(void) {
   SDCD1.thread = NULL;
   SDCD1.rtmo   = SDMMC1_READ_TIMEOUT;
   SDCD1.wtmo   = SDMMC1_WRITE_TIMEOUT;
-  SDCD1.dma    = STM32_DMA_STREAM(STM32_SDC_SDMMC1_DMA_STREAM);
+  SDCD1.dma    = NULL;
   SDCD1.sdmmc  = SDMMC1;
   nvicEnableVector(STM32_SDMMC1_NUMBER, STM32_SDC_SDMMC1_IRQ_PRIORITY);
 #endif
@@ -407,7 +396,7 @@ void sdc_lld_init(void) {
   SDCD2.thread = NULL;
   SDCD2.rtmo   = SDMMC2_READ_TIMEOUT;
   SDCD2.wtmo   = SDMMC2_WRITE_TIMEOUT;
-  SDCD2.dma    = STM32_DMA_STREAM(STM32_SDC_SDMMC2_DMA_STREAM);
+  SDCD2.dma    = NULL;
   SDCD2.sdmmc  = SDMMC2;
   nvicEnableVector(STM32_SDMMC2_NUMBER, STM32_SDC_SDMMC2_IRQ_PRIORITY);
 #endif
@@ -441,10 +430,11 @@ void sdc_lld_start(SDCDriver *sdcp) {
   if (sdcp->state == BLK_STOP) {
 #if STM32_SDC_USE_SDMMC1
     if (&SDCD1 == sdcp) {
-      bool b = dmaStreamAllocate(sdcp->dma, STM32_SDC_SDMMC1_IRQ_PRIORITY,
-                                 NULL, NULL);
-
-      osalDbgAssert(!b, "stream already allocated");
+      sdcp->dma = dmaStreamAllocI(STM32_SDC_SDMMC1_DMA_STREAM,
+                                  STM32_SDC_SDMMC1_IRQ_PRIORITY,
+                                  NULL,
+                                  NULL);
+      osalDbgAssert(sdcp->dma != NULL, "unable to allocate stream");
 
       sdcp->dmamode |= STM32_DMA_CR_CHSEL(SDMMC1_DMA_CHANNEL) |
                        STM32_DMA_CR_PL(STM32_SDC_SDMMC1_DMA_PRIORITY);
@@ -459,10 +449,11 @@ void sdc_lld_start(SDCDriver *sdcp) {
 
 #if STM32_SDC_USE_SDMMC2
     if (&SDCD2 == sdcp) {
-      bool b = dmaStreamAllocate(sdcp->dma, STM32_SDC_SDMMC2_IRQ_PRIORITY,
-                                 NULL, NULL);
-
-      osalDbgAssert(!b, "stream already allocated");
+      sdcp->dma = dmaStreamAllocI(STM32_SDC_SDMMC2_DMA_STREAM,
+                                  STM32_SDC_SDMMC2_IRQ_PRIORITY,
+                                  NULL,
+                                  NULL);
+      osalDbgAssert(sdcp->dma != NULL, "unable to allocate stream");
 
       sdcp->dmamode |= STM32_DMA_CR_CHSEL(SDMMC2_DMA_CHANNEL) |
                        STM32_DMA_CR_PL(STM32_SDC_SDMMC2_DMA_PRIORITY);
@@ -501,7 +492,8 @@ void sdc_lld_stop(SDCDriver *sdcp) {
     sdcp->sdmmc->DTIMER = 0;
 
     /* DMA stream released.*/
-    dmaStreamRelease(sdcp->dma);
+    dmaStreamFreeI(sdcp->dma);
+    sdcp->dma = NULL;
 
     /* Clock deactivation.*/
 #if STM32_SDC_USE_SDMMC1
@@ -545,7 +537,8 @@ void sdc_lld_start_clk(SDCDriver *sdcp) {
  * @notapi
  */
 void sdc_lld_set_data_clk(SDCDriver *sdcp, sdcbusclk_t clk) {
-#if STM32_SDC_SDMMC_50MHZ && defined(STM32F7XX)
+
+#if STM32_SDC_SDMMC_50MHZ
   if (SDC_CLK_50MHz == clk) {
     sdcp->sdmmc->CLKCR = (sdcp->sdmmc->CLKCR & 0xFFFFFF00U) |
 #if STM32_SDC_SDMMC_PWRSAV
@@ -916,9 +909,9 @@ bool sdc_lld_read(SDCDriver *sdcp, uint32_t startblk,
   if (((unsigned)buf & 3) != 0) {
     uint32_t i;
     for (i = 0; i < blocks; i++) {
-      if (sdc_lld_read_aligned(sdcp, startblk, u.buf, 1))
+      if (sdc_lld_read_aligned(sdcp, startblk, sdcp->buf, 1))
         return HAL_FAILED;
-      memcpy(buf, u.buf, MMCSD_BLOCK_SIZE);
+      memcpy(buf, sdcp->buf, MMCSD_BLOCK_SIZE);
       buf += MMCSD_BLOCK_SIZE;
       startblk++;
     }
@@ -951,9 +944,9 @@ bool sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
   if (((unsigned)buf & 3) != 0) {
     uint32_t i;
     for (i = 0; i < blocks; i++) {
-      memcpy(u.buf, buf, MMCSD_BLOCK_SIZE);
+      memcpy(sdcp->buf, buf, MMCSD_BLOCK_SIZE);
       buf += MMCSD_BLOCK_SIZE;
-      if (sdc_lld_write_aligned(sdcp, startblk, u.buf, 1))
+      if (sdc_lld_write_aligned(sdcp, startblk, sdcp->buf, 1))
         return HAL_FAILED;
       startblk++;
     }
@@ -978,7 +971,7 @@ bool sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
  */
 bool sdc_lld_sync(SDCDriver *sdcp) {
 
-  /* TODO: Implement.*/
+  /* CHTODO: Implement.*/
   (void)sdcp;
   return HAL_SUCCESS;
 }

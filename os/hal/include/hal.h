@@ -50,8 +50,8 @@
 #define HAL_USE_DAC                         FALSE
 #endif
 
-#if !defined(HAL_USE_EXT)
-#define HAL_USE_ETX                         FALSE
+#if !defined(HAL_USE_EFL)
+#define HAL_USE_EFL                         FALSE
 #endif
 
 #if !defined(HAL_USE_GPT)
@@ -78,10 +78,6 @@
 #define HAL_USE_PWM                         FALSE
 #endif
 
-#if !defined(HAL_USE_QSPI)
-#define HAL_USE_QSPI                        FALSE
-#endif
-
 #if !defined(HAL_USE_RTC)
 #define HAL_USE_RTC                         FALSE
 #endif
@@ -94,8 +90,16 @@
 #define HAL_USE_SDC                         FALSE
 #endif
 
+#if !defined(HAL_USE_SIO)
+#define HAL_USE_SIO                         FALSE
+#endif
+
 #if !defined(HAL_USE_SPI)
 #define HAL_USE_SPI                         FALSE
+#endif
+
+#if !defined(HAL_USE_TRNG)
+#define HAL_USE_TRNG                        FALSE
 #endif
 
 #if !defined(HAL_USE_UART)
@@ -124,6 +128,8 @@
 #include "hal_files.h"
 #include "hal_ioblock.h"
 #include "hal_mmcsd.h"
+#include "hal_persistent.h"
+#include "hal_flash.h"
 
 /* Shared headers.*/
 #include "hal_buffers.h"
@@ -135,18 +141,19 @@
 #include "hal_can.h"
 #include "hal_crypto.h"
 #include "hal_dac.h"
-#include "hal_ext.h"
+#include "hal_efl.h"
 #include "hal_gpt.h"
 #include "hal_i2c.h"
 #include "hal_i2s.h"
 #include "hal_icu.h"
 #include "hal_mac.h"
 #include "hal_pwm.h"
-#include "hal_qspi.h"
 #include "hal_rtc.h"
 #include "hal_serial.h"
 #include "hal_sdc.h"
+#include "hal_sio.h"
 #include "hal_spi.h"
+#include "hal_trng.h"
 #include "hal_uart.h"
 #include "hal_usb.h"
 #include "hal_wdg.h"
@@ -183,7 +190,7 @@
 /**
  * @brief   Stable release flag.
  */
-#define CH_HAL_STABLE           0
+#define CH_HAL_STABLE           1
 
 /**
  * @name    ChibiOS/HAL version identification
@@ -192,22 +199,22 @@
 /**
  * @brief   HAL version string.
  */
-#define HAL_VERSION             "6.0.0"
+#define HAL_VERSION             "7.1.2"
 
 /**
  * @brief   HAL version major number.
  */
-#define CH_HAL_MAJOR            6
+#define CH_HAL_MAJOR            7
 
 /**
  * @brief   HAL version minor number.
  */
-#define CH_HAL_MINOR            0
+#define CH_HAL_MINOR            1
 
 /**
  * @brief   HAL version patch number.
  */
-#define CH_HAL_PATCH            0
+#define CH_HAL_PATCH            2
 /** @} */
 
 /**
@@ -225,6 +232,15 @@
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
+
+/* Configuration file checks.*/
+#if !defined(_CHIBIOS_HAL_CONF_)
+#error "invalid configuration file"
+#endif
+
+#if !defined(_CHIBIOS_HAL_CONF_VER_7_1_)
+#error "obsolete or unknown configuration file"
+#endif
 
 /*===========================================================================*/
 /* Driver data structures and types.                                         */

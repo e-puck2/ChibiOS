@@ -21,7 +21,7 @@
  */
 
 /**
- * @file    chevents.c
+ * @file    rt/src/chevents.c
  * @brief   Events code.
  *
  * @addtogroup events
@@ -31,12 +31,12 @@
  *          @p thread_t structure.
  *          Operations defined for events:
  *          - <b>Wait</b>, the invoking thread goes to sleep until a certain
- *            AND/OR combination of events become pending.
+ *            AND/OR combination of events are signaled.
  *          - <b>Clear</b>, a mask of events is cleared from the pending
  *            events, the cleared events mask is returned (only the
  *            events that were actually pending and then cleared).
- *          - <b>Signal</b>, an events mask is directly ORed to the mask of the
- *            signaled thread.
+ *          - <b>Signal</b>, an events mask is directly ORed to the mask of
+ *            the signaled thread.
  *          - <b>Broadcast</b>, each thread registered on an Event Source is
  *            signaled with the events specified in its Event Listener.
  *          - <b>Dispatch</b>, an events mask is scanned and for each bit set
@@ -50,8 +50,8 @@
  *          An unlimited number of Event Sources can exists in a system and
  *          each thread can be listening on an unlimited number of
  *          them.
- * @pre     In order to use the Events APIs the @p CH_CFG_USE_EVENTS option must be
- *          enabled in @p chconf.h.
+ * @pre     In order to use the Events APIs the @p CH_CFG_USE_EVENTS option
+ *          must be enabled in @p chconf.h.
  * @post    Enabling events requires 1-4 (depending on the architecture)
  *          extra bytes in the @p thread_t structure.
  * @{
@@ -236,7 +236,7 @@ void chEvtBroadcastFlagsI(event_source_t *esp, eventflags_t flags) {
     /* When flags == 0 the thread will always be signaled because the
        source does not emit any flag.*/
     if ((flags == (eventflags_t)0) ||
-        ((elp->flags & elp->wflags) != (eventflags_t)0)) {
+        ((flags & elp->wflags) != (eventflags_t)0)) {
       chEvtSignalI(elp->listener, elp->events);
     }
     elp = elp->next;
@@ -262,7 +262,7 @@ eventflags_t chEvtGetAndClearFlags(event_listener_t *elp) {
   elp->flags = (eventflags_t)0;
   chSysUnlock();
 
-  return flags;
+  return flags & elp->wflags;
 }
 
 /**
@@ -333,7 +333,7 @@ void chEvtBroadcastFlags(event_source_t *esp, eventflags_t flags) {
 }
 
 /**
- * @brief   Returns the flags associated to an @p event_listener_t.
+ * @brief   Returns the unmasked flags associated to an @p event_listener_t.
  * @details The flags are returned and the @p event_listener_t flags mask is
  *          cleared.
  *
@@ -349,7 +349,7 @@ eventflags_t chEvtGetAndClearFlagsI(event_listener_t *elp) {
   flags = elp->flags;
   elp->flags = (eventflags_t)0;
 
-  return flags;
+  return flags & elp->wflags;
 }
 
 /**

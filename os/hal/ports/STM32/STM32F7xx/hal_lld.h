@@ -651,6 +651,13 @@
 #endif
 
 /**
+ * @brief   TIM clock prescaler selection.
+ */
+#if !defined(STM32_TIMPRE_ENABLE) || defined(__DOXYGEN__)
+#define STM32_TIMPRE_ENABLE                 FALSE
+#endif
+
+/**
  * @brief   I2S clock source.
  */
 #if !defined(STM32_I2SSRC) || defined(__DOXYGEN__)
@@ -900,6 +907,50 @@
  */
 #if !defined(STM32F7xx_MCUCONF)
 #error "Using a wrong mcuconf.h file, STM32F7xx_MCUCONF not defined"
+#endif
+
+#if defined(STM32F722xx) && !defined(STM32F722_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F722_MCUCONF not defined"
+#endif
+
+#if defined(STM32F732xx) && !defined(STM32F732_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F732_MCUCONF not defined"
+#endif
+
+#if defined(STM32F723xx) && !defined(STM32F723_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F723_MCUCONF not defined"
+#endif
+
+#if defined(STM32F733xx) && !defined(STM32F733_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F733_MCUCONF not defined"
+#endif
+
+#if defined(STM32F746xx) && !defined(STM32F746_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F746_MCUCONF not defined"
+#endif
+
+#if defined(STM32F756xx) && !defined(STM32F756_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F756_MCUCONF not defined"
+#endif
+
+#if defined(STM32F765xx) && !defined(STM32F765_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F765_MCUCONF not defined"
+#endif
+
+#if defined(STM32F767xx) && !defined(STM32F767_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F767_MCUCONF not defined"
+#endif
+
+#if defined(STM32F777xx) && !defined(STM32F777_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F777_MCUCONF not defined"
+#endif
+
+#if defined(STM32F769xx) && !defined(STM32F769_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F769_MCUCONF not defined"
+#endif
+
+#if defined(STM32F779xx) && !defined(STM32F779_MCUCONF)
+#error "Using a wrong mcuconf.h file, STM32F779_MCUCONF not defined"
 #endif
 
 /*
@@ -2017,20 +2068,45 @@
 /**
  * @brief   Clock of timers connected to APB1
  */
+#if (STM32_TIMPRE_ENABLE == FALSE) || defined(__DOXYGEN__)
 #if (STM32_PPRE1 == STM32_PPRE1_DIV1) || defined(__DOXYGEN__)
 #define STM32_TIMCLK1               (STM32_PCLK1 * 1)
 #else
 #define STM32_TIMCLK1               (STM32_PCLK1 * 2)
 #endif
+#else
+#if (STM32_PPRE1 == STM32_PPRE1_DIV1) ||                                    \
+    (STM32_PPRE1 == STM32_PPRE1_DIV2) ||                                    \
+    (STM32_PPRE1 == STM32_PPRE1_DIV4)
+#define STM32_TIMCLK1               (STM32_HCLK * 1)
+#else
+#define STM32_TIMCLK1               (STM32_PCLK1 * 4)
+#endif
+#endif
 
 /**
  * @brief   Clock of timers connected to APB2.
  */
+#if (STM32_TIMPRE_ENABLE == FALSE) || defined(__DOXYGEN__)
 #if (STM32_PPRE2 == STM32_PPRE2_DIV1) || defined(__DOXYGEN__)
 #define STM32_TIMCLK2               (STM32_PCLK2 * 1)
 #else
 #define STM32_TIMCLK2               (STM32_PCLK2 * 2)
 #endif
+#else
+#if (STM32_PPRE2 == STM32_PPRE2_DIV1) ||                                    \
+    (STM32_PPRE2 == STM32_PPRE2_DIV2) ||                                    \
+    (STM32_PPRE2 == STM32_PPRE2_DIV4)
+#define STM32_TIMCLK2               (STM32_HCLK * 1)
+#else
+#define STM32_TIMCLK2               (STM32_PCLK2 * 4)
+#endif
+#endif
+
+/**
+ * @brief   RNG clock point.
+ */
+#define STM32_RNGCLK                STM32_PLL48CLK
 
 /**
  * @brief   Flash settings.
@@ -2087,7 +2163,9 @@
 #include "mpu_v7m.h"
 #include "stm32_isr.h"
 #include "stm32_dma.h"
+#include "stm32_exti.h"
 #include "stm32_rcc.h"
+#include "stm32_tim.h"
 
 #ifdef __cplusplus
 extern "C" {

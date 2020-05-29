@@ -31,13 +31,6 @@
 /* Driver constants.                                                         */
 /*===========================================================================*/
 
-/**
- * @brief   Maximum size of a key for all supported algorithms.
- * @note    It could be redefined by the LLD or the crypto fallback
- *          implementations.
- */
-#define HAL_CRY_MAX_KEY_SIZE                32
-
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
@@ -99,7 +92,8 @@ typedef enum {
   CRY_ERR_INV_KEY_SIZE = 2,                 /**< Invalid key size.          */
   CRY_ERR_INV_KEY_TYPE = 3,                 /**< Invalid key type.          */
   CRY_ERR_INV_KEY_ID = 4,                   /**< Invalid key identifier.    */
-  CRY_ERR_OP_FAILURE = 5                    /**< Requested operation failed.*/
+  CRY_ERR_AUTH_FAILED = 5,                  /**< Failed authentication.     */
+  CRY_ERR_OP_FAILURE = 6                    /**< Failed operation.          */
 } cryerror_t;
 
 /**
@@ -130,8 +124,7 @@ typedef enum {
     !defined(CRY_LLD_SUPPORTS_SHA256) ||                                    \
     !defined(CRY_LLD_SUPPORTS_SHA512) ||                                    \
     !defined(CRY_LLD_SUPPORTS_HMAC_SHA256) ||                               \
-    !defined(CRY_LLD_SUPPORTS_HMAC_SHA512) ||                               \
-    !defined(CRY_LLD_SUPPORTS_TRNG)
+    !defined(CRY_LLD_SUPPORTS_HMAC_SHA512)
 #error "CRYPTO LLD does not export the required switches"
 #endif
 
@@ -152,7 +145,6 @@ typedef enum {
 #define CRY_LLD_SUPPORTS_SHA512             FALSE
 #define CRY_LLD_SUPPORTS_HMAC_SHA256        FALSE
 #define CRY_LLD_SUPPORTS_HMAC_SHA512        FALSE
-#define CRY_LLD_SUPPORTS_TRNG               FALSE
 
 typedef uint_fast8_t crykey_t;
 
@@ -165,9 +157,6 @@ typedef struct {
 struct CRYDriver {
   crystate_t                state;
   const CRYConfig           *config;
-  cryalgorithm_t            key0_type;
-  size_t                    key0_size;
-  uint8_t                   key0_buffer[HAL_CRY_MAX_KEY_SIZE];
 };
 #endif /* HAL_CRY_ENFORCE_FALLBACK == TRUE */
 
@@ -237,10 +226,9 @@ extern "C" {
   void cryObjectInit(CRYDriver *cryp);
   void cryStart(CRYDriver *cryp, const CRYConfig *config);
   void cryStop(CRYDriver *cryp);
-  cryerror_t cryLoadTransientKey(CRYDriver *cryp,
-                                 cryalgorithm_t algorithm,
-                                 size_t size,
-                                 const uint8_t *keyp);
+  cryerror_t cryLoadAESTransientKey(CRYDriver *cryp,
+                                    size_t size,
+                                    const uint8_t *keyp);
   cryerror_t cryEncryptAES(CRYDriver *cryp,
                                crykey_t key_id,
                                const uint8_t *in,
@@ -297,22 +285,27 @@ extern "C" {
                                const uint8_t *iv);
   cryerror_t cryEncryptAES_GCM(CRYDriver *cryp,
                                crykey_t key_id,
-                               size_t size,
-                               const uint8_t *in,
-                               uint8_t *out,
+                               size_t auth_size,
+                               const uint8_t *auth_in,
+                               size_t text_size,
+                               const uint8_t *text_in,
+                               uint8_t *text_out,
                                const uint8_t *iv,
-                               size_t aadsize,
-                               const uint8_t *aad,
-                               uint8_t *authtag);
+                               size_t tag_size,
+                               uint8_t *tag_out);
   cryerror_t cryDecryptAES_GCM(CRYDriver *cryp,
                                crykey_t key_id,
-                               size_t size,
-                               const uint8_t *in,
-                               uint8_t *out,
+                               size_t auth_size,
+                               const uint8_t *auth_in,
+                               size_t text_size,
+                               const uint8_t *text_in,
+                               uint8_t *text_out,
                                const uint8_t *iv,
-                               size_t aadsize,
-                               const uint8_t *aad,
-                               uint8_t *authtag);
+                               size_t tag_size,
+                               const uint8_t *tag_in);
+  cryerror_t cryLoadDESTransientKey(CRYDriver *cryp,
+                                    size_t size,
+                                    const uint8_t *keyp);
   cryerror_t cryEncryptDES(CRYDriver *cryp,
                            crykey_t key_id,
                            const uint8_t *in,
@@ -358,6 +351,9 @@ extern "C" {
                              size_t size, const uint8_t *in);
   cryerror_t crySHA512Final(CRYDriver *cryp, SHA512Context *sha512ctxp,
                             uint8_t *out);
+  cryerror_t cryLoadHMACTransientKey(CRYDriver *cryp,
+                                     size_t size,
+                                     const uint8_t *keyp);
   cryerror_t cryHMACSHA256Init(CRYDriver *cryp,
                                HMACSHA256Context *hmacsha256ctxp);
   cryerror_t cryHMACSHA256Update(CRYDriver *cryp,
@@ -376,7 +372,6 @@ extern "C" {
   cryerror_t cryHMACSHA512Final(CRYDriver *cryp,
                                 HMACSHA512Context *hmacsha512ctxp,
                                 uint8_t *out);
-  cryerror_t cryTRNG(CRYDriver *cryp, uint8_t *out);
 #ifdef __cplusplus
 }
 #endif

@@ -37,8 +37,6 @@
  */
 #define DAC_TRG_MASK                    7U
 #define DAC_TRG(n)                      (n)
-#define DAC_TRG_EXT                     6U
-#define DAC_TRG_SW                      7U
 /** @} */
 
 /*===========================================================================*/
@@ -94,6 +92,42 @@
 #endif
 
 /**
+ * @brief   DAC3 CH1 driver enable switch.
+ * @details If set to @p TRUE the support for DAC3 channel 1 is included.
+ * @note    The default is @p FALSE.
+ */
+#if !defined(STM32_DAC_USE_DAC3_CH1) || defined(__DOXYGEN__)
+#define STM32_DAC_USE_DAC3_CH1              FALSE
+#endif
+
+/**
+ * @brief   DAC3 CH2 driver enable switch.
+ * @details If set to @p TRUE the support for DAC3 channel 2 is included.
+ * @note    The default is @p FALSE.
+ */
+#if !defined(STM32_DAC_USE_DAC3_CH2) || defined(__DOXYGEN__)
+#define STM32_DAC_USE_DAC3_CH2              FALSE
+#endif
+
+/**
+ * @brief   DAC4 CH1 driver enable switch.
+ * @details If set to @p TRUE the support for DAC4 channel 1 is included.
+ * @note    The default is @p FALSE.
+ */
+#if !defined(STM32_DAC_USE_DAC4_CH1) || defined(__DOXYGEN__)
+#define STM32_DAC_USE_DAC4_CH1              FALSE
+#endif
+
+/**
+ * @brief   DAC4 CH2 driver enable switch.
+ * @details If set to @p TRUE the support for DAC4 channel 2 is included.
+ * @note    The default is @p FALSE.
+ */
+#if !defined(STM32_DAC_USE_DAC4_CH2) || defined(__DOXYGEN__)
+#define STM32_DAC_USE_DAC4_CH2              FALSE
+#endif
+
+/**
  * @brief   DAC1 CH1 interrupt priority level setting.
  */
 #if !defined(STM32_DAC_DAC1_CH1_IRQ_PRIORITY) || defined(__DOXYGEN__)
@@ -119,6 +153,34 @@
  */
 #if !defined(STM32_DAC_DAC2_CH2_IRQ_PRIORITY) || defined(__DOXYGEN__)
 #define STM32_DAC_DAC2_CH2_IRQ_PRIORITY     10
+#endif
+
+/**
+ * @brief   DAC3 CH1 interrupt priority level setting.
+ */
+#if !defined(STM32_DAC_DAC3_CH1_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DAC_DAC3_CH1_IRQ_PRIORITY     10
+#endif
+
+/**
+ * @brief   DAC3 CH2 interrupt priority level setting.
+ */
+#if !defined(STM32_DAC_DAC3_CH2_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DAC_DAC3_CH2_IRQ_PRIORITY     10
+#endif
+
+/**
+ * @brief   DAC4 CH1 interrupt priority level setting.
+ */
+#if !defined(STM32_DAC_DAC4_CH1_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DAC_DAC4_CH1_IRQ_PRIORITY     10
+#endif
+
+/**
+ * @brief   DAC4 CH2 interrupt priority level setting.
+ */
+#if !defined(STM32_DAC_DAC4_CH2_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DAC_DAC4_CH2_IRQ_PRIORITY     10
 #endif
 
 /**
@@ -148,11 +210,65 @@
 #if !defined(STM32_DAC_DAC2_CH2_DMA_PRIORITY) || defined(__DOXYGEN__)
 #define STM32_DAC_DAC2_CH2_DMA_PRIORITY     2
 #endif
+
+/**
+ * @brief   DAC3 CH1 DMA priority (0..3|lowest..highest).
+ */
+#if !defined(STM32_DAC_DAC3_CH1_DMA_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DAC_DAC3_CH1_DMA_PRIORITY     2
+#endif
+
+/**
+ * @brief   DAC3 CH2 DMA priority (0..3|lowest..highest).
+ */
+#if !defined(STM32_DAC_DAC3_CH2_DMA_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DAC_DAC3_CH2_DMA_PRIORITY     2
+#endif
+
+/**
+ * @brief   DAC4 CH1 DMA priority (0..3|lowest..highest).
+ */
+#if !defined(STM32_DAC_DAC4_CH1_DMA_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DAC_DAC4_CH1_DMA_PRIORITY     2
+#endif
+
+/**
+ * @brief   DAC4 CH2 DMA priority (0..3|lowest..highest).
+ */
+#if !defined(STM32_DAC_DAC4_CH2_DMA_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DAC_DAC4_CH2_DMA_PRIORITY     2
+#endif
 /** @} */
- 
+
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
+
+/* Handling missing registry keys.*/
+#if !defined(STM32_HAS_DAC1_CH1)
+#define STM32_HAS_DAC1_CH1                  FALSE
+#endif
+#if !defined(STM32_HAS_DAC1_CH2)
+#define STM32_HAS_DAC1_CH2                  FALSE
+#endif
+#if !defined(STM32_HAS_DAC2_CH1)
+#define STM32_HAS_DAC2_CH1                  FALSE
+#endif
+#if !defined(STM32_HAS_DAC2_CH2)
+#define STM32_HAS_DAC2_CH2                  FALSE
+#endif
+#if !defined(STM32_HAS_DAC3_CH1)
+#define STM32_HAS_DAC3_CH1                  FALSE
+#endif
+#if !defined(STM32_HAS_DAC3_CH2)
+#define STM32_HAS_DAC3_CH2                  FALSE
+#endif
+#if !defined(STM32_HAS_DAC4_CH1)
+#define STM32_HAS_DAC4_CH1                  FALSE
+#endif
+#if !defined(STM32_HAS_DAC4_CH2)
+#define STM32_HAS_DAC4_CH2                  FALSE
+#endif
 
 #if STM32_DAC_USE_DAC1_CH1 && !STM32_HAS_DAC1_CH1
 #error "DAC1 CH1 not present in the selected device"
@@ -170,18 +286,78 @@
 #error "DAC2 CH2 not present in the selected device"
 #endif
 
-#if (STM32_DAC_USE_DAC1_CH2 || STM32_DAC_USE_DAC2_CH2) && STM32_DAC_DUAL_MODE
+#if STM32_DAC_USE_DAC3_CH1 && !STM32_HAS_DAC3_CH1
+#error "DAC3 CH1 not present in the selected device"
+#endif
+
+#if STM32_DAC_USE_DAC3_CH2 && !STM32_HAS_DAC3_CH2
+#error "DAC3 CH2 not present in the selected device"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH1 && !STM32_HAS_DAC4_CH1
+#error "DAC4 CH1 not present in the selected device"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH2 && !STM32_HAS_DAC4_CH2
+#error "DAC4 CH2 not present in the selected device"
+#endif
+
+#if (STM32_DAC_USE_DAC1_CH2 || STM32_DAC_USE_DAC2_CH2 ||                    \
+     STM32_DAC_USE_DAC3_CH2 || STM32_DAC_USE_DAC4_CH2) && STM32_DAC_DUAL_MODE
 #error "DACx CH2 cannot be used independently in dual mode"
 #endif
 
 #if !STM32_DAC_USE_DAC1_CH1 && !STM32_DAC_USE_DAC1_CH2 &&                   \
-    !STM32_DAC_USE_DAC2_CH1 && !STM32_DAC_USE_DAC2_CH2
+    !STM32_DAC_USE_DAC2_CH1 && !STM32_DAC_USE_DAC2_CH2 &&                   \
+    !STM32_DAC_USE_DAC3_CH1 && !STM32_DAC_USE_DAC3_CH2 &&                   \
+    !STM32_DAC_USE_DAC4_CH1 && !STM32_DAC_USE_DAC4_CH2
 #error "DAC driver activated but no DAC peripheral assigned"
+#endif
+
+#if STM32_DAC_USE_DAC1_CH1 &&                                               \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_DAC_DAC1_CH1_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to DAC1 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC1_CH2 &&                                               \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_DAC_DAC1_CH2_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to DAC1 CH2"
+#endif
+
+#if STM32_DAC_USE_DAC2_CH1 &&                                               \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_DAC_DAC2_CH1_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to DAC2 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC2_CH2 &&                                               \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_DAC_DAC2_CH2_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to DAC2 CH2"
+#endif
+
+#if STM32_DAC_USE_DAC3_CH1 &&                                               \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_DAC_DAC3_CH1_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to DAC3 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC3_CH2 &&                                               \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_DAC_DAC3_CH2_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to DAC3 CH2"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH1 &&                                               \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_DAC_DAC4_CH1_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to DAC4 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH2 &&                                               \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_DAC_DAC4_CH2_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to DAC4 CH2"
 #endif
 
 /* The following checks are only required when there is a DMA able to
    reassign streams to different channels.*/
 #if STM32_ADVANCED_DMA
+
 /* Check on the presence of the DMA streams settings in mcuconf.h.*/
 #if STM32_DAC_USE_DAC1_CH1 && !defined(STM32_DAC_DAC1_CH1_DMA_STREAM)
 #error "DAC1 CH1 DMA stream not defined"
@@ -199,7 +375,27 @@
 #error "DAC2 CH2 DMA stream not defined"
 #endif
 
-/* Check on the validity of the assigned DMA channels.*/
+#if STM32_DAC_USE_DAC3_CH1 && !defined(STM32_DAC_DAC3_CH1_DMA_STREAM)
+#error "DAC3 CH1 DMA stream not defined"
+#endif
+
+#if STM32_DAC_USE_DAC3_CH2 && !defined(STM32_DAC_DAC3_CH2_DMA_STREAM)
+#error "DAC3 CH2 DMA stream not defined"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH1 && !defined(STM32_DAC_DAC4_CH1_DMA_STREAM)
+#error "DAC4 CH1 DMA stream not defined"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH2 && !defined(STM32_DAC_DAC4_CH2_DMA_STREAM)
+#error "DAC4 CH2 DMA stream not defined"
+#endif
+
+#if STM32_DMA_SUPPORTS_DMAMUX
+
+#else /* !STM32_DMA_SUPPORTS_DMAMUX */
+
+/* Check on the validity of the assigned DMA streams.*/
 #if STM32_DAC_USE_DAC1_CH1 &&                                               \
     !STM32_DMA_IS_VALID_ID(STM32_DAC_DAC1_CH1_DMA_STREAM, STM32_DAC1_CH1_DMA_MSK)
 #error "invalid DMA stream associated to DAC1 CH1"
@@ -219,7 +415,70 @@
     !STM32_DMA_IS_VALID_ID(STM32_DAC_DAC2_CH2_DMA_STREAM, STM32_DAC2_CH2_DMA_MSK)
 #error "invalid DMA stream associated to DAC2 CH2"
 #endif
+
+#if STM32_DAC_USE_DAC3_CH1 &&                                               \
+    !STM32_DMA_IS_VALID_ID(STM32_DAC_DAC3_CH1_DMA_STREAM, STM32_DAC3_CH1_DMA_MSK)
+#error "invalid DMA stream associated to DAC1 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC3_CH2 &&                                               \
+    !STM32_DMA_IS_VALID_ID(STM32_DAC_DAC3_CH2_DMA_STREAM, STM32_DAC3_CH2_DMA_MSK)
+#error "invalid DMA stream associated to DAC1 CH2"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH1 &&                                               \
+    !STM32_DMA_IS_VALID_ID(STM32_DAC_DAC4_CH1_DMA_STREAM, STM32_DAC4_CH1_DMA_MSK)
+#error "invalid DMA stream associated to DAC2 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH2 &&                                               \
+    !STM32_DMA_IS_VALID_ID(STM32_DAC_DAC4_CH2_DMA_STREAM, STM32_DAC4_CH2_DMA_MSK)
+#error "invalid DMA stream associated to DAC2 CH2"
+#endif
+
+#endif /* !STM32_DMA_SUPPORTS_DMAMUX */
+
 #endif /* STM32_ADVANCED_DMA */
+
+#if STM32_DAC_USE_DAC1_CH1 &&                                               \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_DAC_DAC1_CH1_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to DAC1 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC1_CH2 &&                                               \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_DAC_DAC1_CH2_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to DAC1 CH2"
+#endif
+
+#if STM32_DAC_USE_DAC2_CH1 &&                                               \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_DAC_DAC2_CH1_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to DAC2 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC2_CH2 &&                                               \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_DAC_DAC2_CH2_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to DAC2 CH2"
+#endif
+
+#if STM32_DAC_USE_DAC3_CH1 &&                                               \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_DAC_DAC3_CH1_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to DAC3 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC3_CH2 &&                                               \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_DAC_DAC3_CH2_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to DAC3 CH2"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH1 &&                                               \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_DAC_DAC4_CH1_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to DAC4 CH1"
+#endif
+
+#if STM32_DAC_USE_DAC4_CH2 &&                                               \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_DAC_DAC4_CH2_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to DAC4 CH2"
+#endif
 
 #if !defined(STM32_DMA_REQUIRED)
 #define STM32_DMA_REQUIRED
@@ -229,9 +488,9 @@
  * @brief   Max DAC channels.
  */
 #if STM32_DAC_DUAL_MODE == FALSE
-#define DAC_MAX_CHANNELS                    1
-#else
 #define DAC_MAX_CHANNELS                    2
+#else
+#define DAC_MAX_CHANNELS                    1
 #endif
 
 /*===========================================================================*/
@@ -242,6 +501,11 @@
  * @brief   Type of a DAC channel index.
  */
 typedef uint32_t dacchannel_t;
+
+/**
+ * @brief   Type representing a DAC sample.
+ */
+typedef uint16_t dacsample_t;
 
 /**
  * @brief   DAC channel parameters type.
@@ -264,9 +528,9 @@ typedef struct {
    */
   uint32_t                  regmask;
   /**
-   * @brief   Associated DMA.
+   * @brief   Associated DMA stream.
    */
-  const stm32_dma_stream_t  *dma;
+  uint32_t                  dmastream;
   /**
    * @brief   Mode bits for the DMA.
    */
@@ -275,17 +539,13 @@ typedef struct {
    * @brief   DMA channel IRQ priority.
    */
   uint32_t                  dmairqprio;
+#if (STM32_DMA_SUPPORTS_DMAMUX == TRUE) || defined(__DOXYGEN__)
+  /**
+   * @brief   DMAMUX peripheral selector.
+   */
+  uint32_t                  peripheral;
+#endif
 } dacparams_t;
-
-/**
- * @brief   Type of a structure representing an DAC driver.
- */
-typedef struct DACDriver DACDriver;
-
-/**
- * @brief   Type representing a DAC sample.
- */
-typedef uint16_t dacsample_t;
 
 /**
  * @brief   Possible DAC failure causes.
@@ -298,28 +558,9 @@ typedef enum {
 } dacerror_t;
 
 /**
- * @brief   DAC notification callback type.
- *
- * @param[in] dacp      pointer to the @p DACDriver object triggering the
- * @param[in] buffer    pointer to the next semi-buffer to be filled
- * @param[in] n         number of buffer rows available starting from @p buffer
- *                      callback
- */
-typedef void (*daccallback_t)(DACDriver *dacp, dacsample_t *buffer, size_t n);
-
-/**
- * @brief   DAC error callback type.
- *
- * @param[in] dacp      pointer to the @p DACDriver object triggering the
- *                      callback
- * @param[in] err       DAC error code
- */
-typedef void (*dacerrorcallback_t)(DACDriver *dacp, dacerror_t err);
-
-/**
  * @brief   Samples alignment and size mode.
  */
-typedef enum { 
+typedef enum {
   DAC_DHRM_12BIT_RIGHT = 0,
   DAC_DHRM_12BIT_LEFT = 1,
   DAC_DHRM_8BIT_RIGHT = 2,
@@ -330,100 +571,38 @@ typedef enum {
 #endif
 } dacdhrmode_t;
 
-/**
- * @brief   DAC Conversion group structure.
- */
-typedef struct {
-  /**
-   * @brief   Number of DAC channels.
-   */
-  uint32_t                  num_channels;
-  /**
-   * @brief   Operation complete callback or @p NULL.
-   */
-  daccallback_t             end_cb;
-  /**
-   * @brief   Error handling callback or @p NULL.
-   */
-  dacerrorcallback_t        error_cb;
-  /* End of the mandatory fields.*/
-  /**
-   * @brief   DAC initialization data.
-   * @note    This field contains the (not shifted) value to be put into the
-   *          TSEL field of the DAC CR register during initialization. All
-   *          other fields are handled internally.
-   */
-  uint32_t                  trigger;
-} DACConversionGroup;
-
-/**
- * @brief   Driver configuration structure.
- */
-typedef struct {
-  /* End of the mandatory fields.*/
-  /**
-   * @brief   Initial output on DAC channels.
-   */
-  dacsample_t               init;
-  /**
-   * @brief   DAC data holding register mode.
-   */
-  dacdhrmode_t              datamode;
-  /**
-   * @brief   DAC control register.
-   */
-  uint16_t                  cr;
-} DACConfig;
-
-/**
- * @brief   Structure representing a DAC driver.
- */
-struct DACDriver {
-  /**
-   * @brief   Driver state.
-   */
-  dacstate_t                state;
-  /**
-   * @brief   Conversion group.
-   */
-  const DACConversionGroup  *grpp;
-  /**
-   * @brief   Samples buffer pointer.
-   */
-  dacsample_t               *samples;
-  /**
-   * @brief   Samples buffer size.
-   */
-  uint16_t                  depth;
-  /**
-   * @brief   Current configuration data.
-   */
-  const DACConfig           *config;
-#if DAC_USE_WAIT || defined(__DOXYGEN__)
-  /**
-   * @brief   Waiting thread.
-   */
-  thread_reference_t        thread;
-#endif /* DAC_USE_WAIT */
-#if DAC_USE_MUTUAL_EXCLUSION || defined(__DOXYGEN__)
-  /**
-   * @brief   Mutex protecting the bus.
-   */
-  mutex_t                   mutex;
-#endif /* DAC_USE_MUTUAL_EXCLUSION */
-#if defined(DAC_DRIVER_EXT_FIELDS)
-  DAC_DRIVER_EXT_FIELDS
-#endif
-  /* End of the mandatory fields.*/
-  /**
-   * @brief   DAC channel parameters.
-   */
-  const dacparams_t         *params;
-};
-
 /*===========================================================================*/
 /* Driver macros.                                                            */
 /*===========================================================================*/
+
+/**
+ * @brief   Low level fields of the DAC driver structure.
+ */
+#define dac_lld_driver_fields                                               \
+  /* DAC channel parameters.*/                                              \
+  const dacparams_t         *params;                                        \
+  /* Associated DMA.*/                                                      \
+  const stm32_dma_stream_t  *dma
+
+/**
+ * @brief   Low level fields of the DAC configuration structure.
+ */
+#define dac_lld_config_fields                                               \
+  /* Initial output on DAC channels.*/                                      \
+  dacsample_t               init;                                           \
+  /* DAC data holding register mode.*/                                      \
+  dacdhrmode_t              datamode;                                       \
+  /* DAC control register lower 16 bits.*/                                  \
+  uint32_t                  cr
+
+/**
+ * @brief   Low level fields of the DAC group configuration structure.
+ */
+#define dac_lld_conversion_group_fields                                     \
+  /* DAC initialization data. This field contains the (not shifted) value   \
+     to be put into the TSEL field of the DAC CR register during            \
+     initialization. All other fields are handled internally.*/             \
+  uint32_t                  trigger
 
 /*===========================================================================*/
 /* External declarations.                                                    */
@@ -443,6 +622,22 @@ extern DACDriver DACD3;
 
 #if STM32_DAC_USE_DAC2_CH2 && !STM32_DAC_DUAL_MODE && !defined(__DOXYGEN__)
 extern DACDriver DACD4;
+#endif
+
+#if STM32_DAC_USE_DAC3_CH1 && !defined(__DOXYGEN__)
+extern DACDriver DACD5;
+#endif
+
+#if STM32_DAC_USE_DAC3_CH2 && !STM32_DAC_DUAL_MODE && !defined(__DOXYGEN__)
+extern DACDriver DACD6;
+#endif
+
+#if STM32_DAC_USE_DAC4_CH1 && !defined(__DOXYGEN__)
+extern DACDriver DACD7;
+#endif
+
+#if STM32_DAC_USE_DAC4_CH2 && !STM32_DAC_DUAL_MODE && !defined(__DOXYGEN__)
+extern DACDriver DACD8;
 #endif
 
 #ifdef __cplusplus

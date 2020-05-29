@@ -61,7 +61,6 @@ static union {
  * @brief   SDIO default configuration.
  */
 static const SDCConfig sdc_default_cfg = {
-  NULL,
   SDC_MODE_4BIT
 };
 
@@ -110,7 +109,7 @@ static bool sdc_lld_prepare_read_bytes(SDCDriver *sdcp,
 
   /* Transaction starts just after DTEN bit setting.*/
   sdcp->sdio->DCTRL = SDIO_DCTRL_DTDIR |
-                      SDIO_DCTRL_DTMODE |   /* multibyte data transfer */
+                      SDIO_DCTRL_DTMODE |   /* Multibyte data transfer.*/
                       SDIO_DCTRL_DMAEN |
                       SDIO_DCTRL_DTEN;
 
@@ -228,10 +227,6 @@ static bool sdc_lld_wait_transaction_end(SDCDriver *sdcp, uint32_t n,
   sdcp->sdio->ICR = STM32_SDIO_ICR_ALL_FLAGS;
   sdcp->sdio->DCTRL = 0;
   osalSysUnlock();
-
-  /* Wait until interrupt flags to be cleared.*/
-  /*while (((DMA2->LISR) >> (sdcp->dma->ishift)) & STM32_DMA_ISR_TCIF)
-    dmaStreamClearInterrupt(sdcp->dma);*/
 #else
   /* Waits for transfer completion at DMA level, then the stream is
      disabled and cleared.*/
@@ -346,8 +341,9 @@ void sdc_lld_init(void) {
 
   sdcObjectInit(&SDCD1);
   SDCD1.thread = NULL;
-  SDCD1.dma    = STM32_DMA_STREAM(STM32_SDC_SDIO_DMA_STREAM);
+  SDCD1.dma    = NULL;
   SDCD1.sdio   = SDIO;
+  nvicEnableVector(STM32_SDIO_NUMBER, STM32_SDC_SDIO_IRQ_PRIORITY);
 }
 
 /**
@@ -377,15 +373,16 @@ void sdc_lld_start(SDCDriver *sdcp) {
 #endif
 
   if (sdcp->state == BLK_STOP) {
-    /* Note, the DMA must be enabled before the IRQs.*/
-    bool b;
-    b = dmaStreamAllocate(sdcp->dma, STM32_SDC_SDIO_IRQ_PRIORITY, NULL, NULL);
-    osalDbgAssert(!b, "stream already allocated");
+    sdcp->dma = dmaStreamAllocI(STM32_SDC_SDIO_DMA_STREAM,
+                                STM32_SDC_SDIO_IRQ_PRIORITY,
+                                NULL,
+                                NULL);
+    osalDbgAssert(sdcp->dma != NULL, "unable to allocate stream");
+
     dmaStreamSetPeripheral(sdcp->dma, &sdcp->sdio->FIFO);
 #if (defined(STM32F4XX) || defined(STM32F2XX))
     dmaStreamSetFIFO(sdcp->dma, STM32_DMA_FCR_DMDIS | STM32_DMA_FCR_FTH_FULL);
 #endif
-    nvicEnableVector(STM32_SDIO_NUMBER, STM32_SDC_SDIO_IRQ_PRIORITY);
     rccEnableSDIO(true);
   }
 
@@ -413,9 +410,11 @@ void sdc_lld_stop(SDCDriver *sdcp) {
     sdcp->sdio->DCTRL  = 0;
     sdcp->sdio->DTIMER = 0;
 
+    /* DMA stream released.*/
+    dmaStreamFreeI(sdcp->dma);
+    sdcp->dma = NULL;
+
     /* Clock deactivation.*/
-    nvicDisableVector(STM32_SDIO_NUMBER);
-    dmaStreamRelease(sdcp->dma);
     rccDisableSDIO();
   }
 }
@@ -447,7 +446,8 @@ void sdc_lld_start_clk(SDCDriver *sdcp) {
  * @notapi
  */
 void sdc_lld_set_data_clk(SDCDriver *sdcp, sdcbusclk_t clk) {
-#if 0
+
+#if STM32_SDC_SDIO_50MHZ
   if (SDC_CLK_50MHz == clk) {
     sdcp->sdio->CLKCR = (sdcp->sdio->CLKCR & 0xFFFFFF00U) | STM32_SDIO_DIV_HS
                                                           | SDIO_CLKCR_BYPASS;
@@ -642,7 +642,7 @@ bool sdc_lld_read_special(SDCDriver *sdcp, uint8_t *buf, size_t bytes,
                           uint8_t cmd, uint32_t arg) {
   uint32_t resp[1];
 
-  if(sdc_lld_prepare_read_bytes(sdcp, buf, bytes))
+  if (sdc_lld_prepare_read_bytes(sdcp, buf, bytes))
     goto error;
 
   if (sdc_lld_send_cmd_short_crc(sdcp, cmd, arg, resp)
@@ -866,7 +866,7 @@ bool sdc_lld_write(SDCDriver *sdcp, uint32_t startblk,
  */
 bool sdc_lld_sync(SDCDriver *sdcp) {
 
-  /* TODO: Implement.*/
+  /* CHTODO: Implement.*/
   (void)sdcp;
   return HAL_SUCCESS;
 }

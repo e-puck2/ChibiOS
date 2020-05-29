@@ -92,6 +92,9 @@ static void hal_lld_backup_domain_init(void) {
     RCC->BDCR |= RCC_BDCR_RTCEN;
   }
 #endif /* HAL_USE_RTC */
+
+  /* Low speed output mode.*/
+  RCC->BDCR |= STM32_LSCOSEL;
 }
 
 /*===========================================================================*/
@@ -347,9 +350,21 @@ void stm32_clock_init(void) {
     RCC->CCIPR = ccipr;
   }
 
+#if STM32_HAS_I2C4
+  /* CCIPR2 register initialization.*/
+  {
+    uint32_t ccipr2 = STM32_I2C4SEL;
+    RCC->CCIPR2 = ccipr2;
+  }
+#endif
+
   /* Set flash WS's for SYSCLK source */
-  if (STM32_FLASHBITS > STM32_MSI_FLASHBITS)
+  if (STM32_FLASHBITS > STM32_MSI_FLASHBITS) {
     FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY_Msk) | STM32_FLASHBITS;
+    while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) !=
+           (STM32_FLASHBITS & FLASH_ACR_LATENCY_Msk)) {
+    }
+  }
 
   /* Switching to the configured SYSCLK source if it is different from MSI.*/
 #if (STM32_SW != STM32_SW_MSI)
@@ -360,8 +375,12 @@ void stm32_clock_init(void) {
 #endif
 
   /* Reduce the flash WS's for SYSCLK source if they are less than MSI WSs */
-  if (STM32_FLASHBITS < STM32_MSI_FLASHBITS)
+  if (STM32_FLASHBITS < STM32_MSI_FLASHBITS) {
     FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY_Msk) | STM32_FLASHBITS;
+    while ((FLASH->ACR & FLASH_ACR_LATENCY_Msk) !=
+           (STM32_FLASHBITS & FLASH_ACR_LATENCY_Msk)) {
+    }
+  }
 
 #endif /* STM32_NO_INIT */
 

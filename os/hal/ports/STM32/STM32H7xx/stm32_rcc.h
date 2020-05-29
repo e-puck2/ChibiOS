@@ -472,21 +472,21 @@
  *
  * @api
  */
-#define rccEnableADC3(lp) rccEnableAPB2(RCC_APB2ENR_ADC3EN, lp)
+#define rccEnableADC3(lp) rccEnableAHB4(RCC_AHB4ENR_ADC3EN, lp)
 
 /**
  * @brief   Disables the ADC3 peripheral clock.
  *
  * @api
  */
-#define rccDisableADC3() rccDisableAPB2(RCC_APB2ENR_ADC3EN)
+#define rccDisableADC3() rccDisableAHB4(RCC_AHB4ENR_ADC3EN)
 
 /**
  * @brief   Resets the ADC3 peripheral.
  *
  * @api
  */
-#define rccResetADC3() rccResetAPB2(RCC_APB2RSTR_ADC3RST)
+#define rccResetADC3() rccResetAHB4(RCC_AHB4RSTR_ADC3RST)
 /** @} */
 
 /**
@@ -500,21 +500,21 @@
  *
  * @api
  */
-#define rccEnableDAC1(lp) rccEnableAPB1L(RCC_APB1LENR_DACEN, lp)
+#define rccEnableDAC1(lp) rccEnableAPB1L(RCC_APB1LENR_DAC12EN, lp)
 
 /**
  * @brief   Disables the DAC1 peripheral clock.
  *
  * @api
  */
-#define rccDisableDAC1() rccDisableAPB1L(RCC_APB1LENR_DACEN)
+#define rccDisableDAC1() rccDisableAPB1L(RCC_APB1LENR_DAC12EN)
 
 /**
  * @brief   Resets the DAC1 peripheral.
  *
  * @api
  */
-#define rccResetDAC1() rccResetAPB1L(RCC_APB1LRSTR_DACRST)
+#define rccResetDAC1() rccResetAPB1L(RCC_APB1LRSTR_DAC12RST)
 /** @} */
 
 /**
@@ -589,6 +589,29 @@
  * @api
  */
 #define rccResetDMA2() rccResetAHB1(RCC_AHB1RSTR_DMA2RST)
+
+/**
+ * @brief   Enables the MDMA peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableMDMA(lp) rccEnableAHB3(RCC_AHB3ENR_MDMAEN, lp)
+
+/**
+ * @brief   Disables the MDMA peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableMDMA() rccDisableAHB3(RCC_AHB3ENR_MDMAEN)
+
+/**
+ * @brief   Resets the MDMA peripheral.
+ *
+ * @api
+ */
+#define rccResetMDMA() rccResetAHB3(RCC_AHB3ENR_MDMARST)
 /** @} */
 
 /**
@@ -690,6 +713,34 @@
  * @api
  */
 #define rccResetETH() rccResetAHB1(RCC_AHB1RSTR_ETHMACRST)
+/** @} */
+
+/**
+ * @name    FDCAN peripherals specific RCC operations
+ * @{
+ */
+/**
+ * @brief   Enables the FDCAN peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableFDCAN(lp) rccEnableAPB1H(RCC_APB1HENR_FDCANEN, lp)
+
+/**
+ * @brief   Disables the FDCAN peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableFDCAN() rccDisableAPB1H(RCC_APB1HENR_FDCANEN)
+
+/**
+ * @brief   Resets the FDCAN peripheral.
+ *
+ * @api
+ */
+#define rccResetFDCAN() rccResetAPB1H(RCC_APB1HRSTR_FDCANRST)
 /** @} */
 
 /**
@@ -898,6 +949,34 @@
  * @api
  */
 #define rccResetQUADSPI1() rccResetAHB3(RCC_AHB3RSTR_QSPIRST)
+/** @} */
+
+/**
+ * @name    RNG peripherals specific RCC operations
+ * @{
+ */
+/**
+ * @brief   Enables the RNG peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableRNG(lp) rccEnableAHB2(RCC_AHB2ENR_RNGEN, lp)
+
+/**
+ * @brief   Disables the RNG peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableRNG() rccDisableAHB2(RCC_AHB2ENR_RNGEN)
+
+/**
+ * @brief   Resets the RNG peripheral.
+ *
+ * @api
+ */
+#define rccResetRNG() rccResetAHB2(RCC_AHB2RSTR_RNGRST)
 /** @} */
 
 /**

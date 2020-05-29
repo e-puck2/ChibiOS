@@ -60,6 +60,9 @@ ICSR_PENDSVSET  EQU     0x10000000
 
                 IMPORT  chThdExit
                 IMPORT  chSchDoReschedule
+#if CH_DBG_ENABLE_STACK_CHECK && PORT_ENABLE_GUARD_PAGES
+                IMPORT  _port_set_region
+#endif
 #if CH_DBG_STATISTICS
                 IMPORT   _stats_start_measure_crit_thd
                 IMPORT   _stats_stop_measure_crit_thd
@@ -102,6 +105,9 @@ _port_switch    PROC
  */
                 EXPORT  _port_thread_start
 _port_thread_start PROC
+#if CH_DBG_ENABLE_STACK_CHECK && PORT_ENABLE_GUARD_PAGES
+                bl      _port_set_region
+#endif
 #if CH_DBG_SYSTEM_STATE_CHECK
                 bl      _dbg_check_unlock
 #endif
@@ -116,14 +122,9 @@ _port_thread_start PROC
 #endif
                 mov     r0, r5
                 blx     r4
-#if defined(_CHIBIOS_RT_CONF_)
                 movs    r0, #0              /* MSG_OK */
                 bl      chThdExit
-#endif
-#if defined(_CHIBIOS_NIL_CONF_)
-                mov     r3, #0
-                bl      chSysHalt
-#endif
+_zombies        b       _zombies
                 ENDP
 
 /*

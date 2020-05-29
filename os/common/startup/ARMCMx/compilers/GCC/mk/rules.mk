@@ -86,8 +86,8 @@ ifdef SREC
 endif
 
 # Source files groups and paths
-TCSRC   += $(CSRC)
-TCPPSRC += $(CPPSRC)
+TCSRC     += $(CSRC)
+TCPPSRC   += $(CPPSRC)
 TSRC      := $(TCSRC) $(TCPPSRC)
 SRCPATHS  := $(sort $(dir $(ASMXSRC)) $(dir $(ASMSRC)) $(dir $(TSRC)))
 
@@ -97,10 +97,13 @@ LSTDIR    := $(BUILDDIR)/lst
 
 # Object files groups
 TCOBJS    := $(addprefix $(OBJDIR)/, $(notdir $(TCSRC:.c=.o)))
-TCPPOBJS  := $(addprefix $(OBJDIR)/, $(notdir $(TCPPSRC:.cpp=.o)))
+#TCPPOBJS  := $(addprefix $(OBJDIR)/, $(notdir $(TCPPSRC:.cpp=.o)))
+TCPPOBJS  := $(addprefix $(OBJDIR)/, $(notdir $(patsubst %.cpp, %.o, $(filter %.cpp, $(TCPPSRC)))))
+TCCOBJS   := $(addprefix $(OBJDIR)/, $(notdir $(patsubst %.cc, %.o, $(filter %.cc, $(TCPPSRC)))))
 ASMOBJS   := $(addprefix $(OBJDIR)/, $(notdir $(ASMSRC:.s=.o)))
 ASMXOBJS  := $(addprefix $(OBJDIR)/, $(notdir $(ASMXSRC:.S=.o)))
-OBJS      := $(ASMXOBJS) $(ASMOBJS) $(ACOBJS) $(TCOBJS) $(ACPPOBJS) $(TCPPOBJS)
+#OBJS      := $(ASMXOBJS) $(ASMOBJS) $(ACOBJS) $(TCOBJS) $(ACPPOBJS) $(TCPPOBJS)
+OBJS      := $(ASMXOBJS) $(ASMOBJS) $(ACOBJS) $(TCOBJS) $(ACPPOBJS) $(TCPPOBJS) $(TCCOBJS)
 
 # Paths
 IINCDIR   := $(patsubst %,-I%,$(INCDIR) $(DINCDIR) $(UINCDIR))
@@ -141,7 +144,7 @@ PRE_MAKE_ALL_RULE_HOOK:
 
 POST_MAKE_ALL_RULE_HOOK:
 
-$(OBJS): | $(BUILDDIR) $(OBJDIR) $(LSTDIR) $(DEPDIR)
+$(OBJS): | PRE_MAKE_ALL_RULE_HOOK $(BUILDDIR) $(OBJDIR) $(LSTDIR) $(DEPDIR)
 
 $(BUILDDIR):
 ifneq ($(USE_VERBOSE_COMPILE),yes)
@@ -161,6 +164,15 @@ $(DEPDIR):
 	@mkdir -p $(DEPDIR)
 
 $(TCPPOBJS) : $(OBJDIR)/%.o : %.cpp $(MAKEFILE_LIST)
+ifeq ($(USE_VERBOSE_COMPILE),yes)
+	@echo
+	$(CPPC) -c $(CPPFLAGS) -I. $(IINCDIR) $< -o $@
+else
+	@echo Compiling $(<F)
+	@$(CPPC) -c $(CPPFLAGS) -I. $(IINCDIR) $< -o $@
+endif
+
+$(TCCOBJS) : $(OBJDIR)/%.o : %.cc $(MAKEFILE_LIST)
 ifeq ($(USE_VERBOSE_COMPILE),yes)
 	@echo
 	$(CPPC) -c $(CPPFLAGS) -I. $(IINCDIR) $< -o $@

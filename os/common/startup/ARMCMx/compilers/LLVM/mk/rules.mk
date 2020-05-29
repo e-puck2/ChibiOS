@@ -41,6 +41,7 @@ ifneq ($(USE_FPU),no)
   DDEFS  += -DCORTEX_USE_FPU=TRUE
   DADEFS += -DCORTEX_USE_FPU=TRUE
 else
+  OPT    += -mfloat-abi=soft
   DDEFS  += -DCORTEX_USE_FPU=FALSE
   DADEFS += -DCORTEX_USE_FPU=FALSE
 endif
@@ -86,8 +87,8 @@ ifdef SREC
 endif
 
 # Source files groups and paths
-TCSRC   += $(CSRC)
-TCPPSRC += $(CPPSRC)
+TCSRC     += $(CSRC)
+TCPPSRC   += $(CPPSRC)
 TSRC      := $(TCSRC) $(TCPPSRC)
 SRCPATHS  := $(sort $(dir $(ASMXSRC)) $(dir $(ASMSRC)) $(dir $(TSRC)))
 
@@ -145,7 +146,7 @@ PRE_MAKE_ALL_RULE_HOOK:
 
 POST_MAKE_ALL_RULE_HOOK:
 
-$(OBJS): | $(BUILDDIR) $(OBJDIR) $(LSTDIR) $(DEPDIR)
+$(OBJS): | PRE_MAKE_ALL_RULE_HOOK $(BUILDDIR) $(OBJDIR) $(LSTDIR) $(DEPDIR)
 
 $(BUILDDIR):
 ifneq ($(USE_VERBOSE_COMPILE),yes)

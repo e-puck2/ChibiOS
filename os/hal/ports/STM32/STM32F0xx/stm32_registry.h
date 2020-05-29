@@ -37,8 +37,16 @@
  * @name    STM32F0xx capabilities
  * @{
  */
+
 /*===========================================================================*/
-/* STM32F030x4, STM32F030x6, STM32F030x8, STM32F030xC.                                    */
+/* Common.                                                                   */
+/*===========================================================================*/
+
+/* RNG attributes.*/
+#define STM32_HAS_RNG1                      FALSE
+
+/*===========================================================================*/
+/* STM32F030x4, STM32F030x6, STM32F030x8, STM32F030xC.                       */
 /*===========================================================================*/
 #if defined(STM32F030x4) || defined(STM32F030x6) ||                         \
     defined(STM32F030x8) || defined(STM32F030xC) || defined(__DOXYGEN__)
@@ -59,7 +67,6 @@
 #define STM32_HAS_ADC1                      TRUE
 #define STM32_ADC_SUPPORTS_PRESCALER        FALSE
 #define STM32_ADC_SUPPORTS_OVERSAMPLING     FALSE
-#define STM32_ADC1_IRQ_SHARED_WITH_EXTI     FALSE
 #define STM32_ADC1_HANDLER                  Vector70
 #define STM32_ADC1_NUMBER                   12
 #define STM32_ADC1_DMA_MSK                  (STM32_DMA_STREAM_ID_MSK(1, 1) |\
@@ -83,6 +90,7 @@
 
 /* DMA attributes.*/
 #define STM32_ADVANCED_DMA                  TRUE
+#define STM32_DMA_SUPPORTS_DMAMUX           FALSE
 #if defined(STM32F030xC) || defined(__DOXYGEN__)
 #define STM32_DMA_SUPPORTS_CSELR            TRUE
 #else
@@ -99,29 +107,29 @@
 
 #define STM32_DMA1_CH2_NUMBER               STM32_DMA1_CH23_NUMBER
 #define STM32_DMA1_CH3_NUMBER               STM32_DMA1_CH23_NUMBER
-#define DMA1_CH2_CMASK                      0x00000006U
-#define DMA1_CH3_CMASK                      0x00000006U
+#define STM32_DMA1_CH2_CMASK                0x00000006U
+#define STM32_DMA1_CH3_CMASK                0x00000006U
 
 #define STM32_DMA1_CH4_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH5_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH6_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH7_NUMBER               STM32_DMA1_CH4567_NUMBER
-#define DMA1_CH4_CMASK                      0x00000078U
-#define DMA1_CH5_CMASK                      0x00000078U
-#define DMA1_CH6_CMASK                      0x00000078U
-#define DMA1_CH7_CMASK                      0x00000078U
+#define STM32_DMA1_CH4_CMASK                0x00000078U
+#define STM32_DMA1_CH5_CMASK                0x00000078U
+#define STM32_DMA1_CH6_CMASK                0x00000078U
+#define STM32_DMA1_CH7_CMASK                0x00000078U
 
 /* ETH attributes.*/
 #define STM32_HAS_ETH                       FALSE
 
 /* EXTI attributes.*/
 #define STM32_EXTI_NUM_LINES                20
-#define STM32_EXTI_IMR_MASK                 0xFFF50000U
+#define STM32_EXTI_IMR1_MASK                0xFFF50000U
 
 /* GPIO attributes.*/
 #define STM32_HAS_GPIOA                     TRUE
 #define STM32_HAS_GPIOB                     TRUE
-#if !defined(STM32F030x4)
+#if !defined(STM32F030x4) && !defined(STM32F030x6)
 #define STM32_HAS_GPIOC                     TRUE
 #define STM32_HAS_GPIOD                     TRUE
 #else
@@ -173,7 +181,14 @@
 #define STM32_RTC_HAS_PERIODIC_WAKEUPS      FALSE
 #endif
 #define STM32_RTC_NUM_ALARMS                1
-#define STM32_RTC_HAS_INTERRUPTS            FALSE
+#define STM32_RTC_STORAGE_SIZE              0
+#define STM32_RTC_COMMON_HANDLER            Vector48
+#define STM32_RTC_COMMON_NUMBER             2
+#define STM32_RTC_ALARM_EXTI                17
+#define STM32_RTC_TAMP_STAMP_EXTI           19
+#define STM32_RTC_WKUP_EXTI                 20
+#define STM32_RTC_IRQ_ENABLE()                                              \
+  nvicEnableVector(STM32_RTC_COMMON_NUMBER, STM32_IRQ_EXTI17_20_IRQ_PRIORITY)
 
 /* SDIO attributes.*/
 #define STM32_HAS_SDIO                      FALSE
@@ -373,7 +388,6 @@
 #define STM32_HAS_ADC1                      TRUE
 #define STM32_ADC_SUPPORTS_PRESCALER        FALSE
 #define STM32_ADC_SUPPORTS_OVERSAMPLING     FALSE
-#define STM32_ADC1_IRQ_SHARED_WITH_EXTI     TRUE
 #define STM32_ADC1_HANDLER                  Vector70
 #define STM32_ADC1_NUMBER                   12
 #define STM32_ADC1_DMA_MSK                  (STM32_DMA_STREAM_ID_MSK(1, 1) |\
@@ -397,6 +411,7 @@
 
 /* DMA attributes.*/
 #define STM32_ADVANCED_DMA                  TRUE
+#define STM32_DMA_SUPPORTS_DMAMUX           FALSE
 #define STM32_DMA_SUPPORTS_CSELR            FALSE
 #define STM32_DMA1_NUM_CHANNELS             5
 #define STM32_DMA2_NUM_CHANNELS             0
@@ -409,24 +424,24 @@
 
 #define STM32_DMA1_CH2_NUMBER               STM32_DMA1_CH23_NUMBER
 #define STM32_DMA1_CH3_NUMBER               STM32_DMA1_CH23_NUMBER
-#define DMA1_CH2_CMASK                      0x00000006U
-#define DMA1_CH3_CMASK                      0x00000006U
+#define STM32_DMA1_CH2_CMASK                0x00000006U
+#define STM32_DMA1_CH3_CMASK                0x00000006U
 
 #define STM32_DMA1_CH4_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH5_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH6_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH7_NUMBER               STM32_DMA1_CH4567_NUMBER
-#define DMA1_CH4_CMASK                      0x00000078U
-#define DMA1_CH5_CMASK                      0x00000078U
-#define DMA1_CH6_CMASK                      0x00000078U
-#define DMA1_CH7_CMASK                      0x00000078U
+#define STM32_DMA1_CH4_CMASK                0x00000078U
+#define STM32_DMA1_CH5_CMASK                0x00000078U
+#define STM32_DMA1_CH6_CMASK                0x00000078U
+#define STM32_DMA1_CH7_CMASK                0x00000078U
 
 /* ETH attributes.*/
 #define STM32_HAS_ETH                       FALSE
 
 /* EXTI attributes.*/
 #define STM32_EXTI_NUM_LINES                32
-#define STM32_EXTI_IMR_MASK                 0x0FF40000U
+#define STM32_EXTI_IMR1_MASK                0x0FF40000U
 
 /* GPIO attributes.*/
 #define STM32_HAS_GPIOA                     TRUE
@@ -464,7 +479,14 @@
 #define STM32_RTC_HAS_SUBSECONDS            TRUE
 #define STM32_RTC_HAS_PERIODIC_WAKEUPS      FALSE
 #define STM32_RTC_NUM_ALARMS                1
-#define STM32_RTC_HAS_INTERRUPTS            FALSE
+#define STM32_RTC_STORAGE_SIZE              0
+#define STM32_RTC_COMMON_HANDLER            Vector48
+#define STM32_RTC_COMMON_NUMBER             2
+#define STM32_RTC_ALARM_EXTI                17
+#define STM32_RTC_TAMP_STAMP_EXTI           19
+#define STM32_RTC_WKUP_EXTI                 20
+#define STM32_RTC_IRQ_ENABLE()                                              \
+  nvicEnableVector(STM32_RTC_COMMON_NUMBER, STM32_IRQ_EXTI17_20_IRQ_PRIORITY)
 
 /* SDIO attributes.*/
 #define STM32_HAS_SDIO                      FALSE
@@ -582,7 +604,6 @@
 #define STM32_HAS_ADC1                      TRUE
 #define STM32_ADC_SUPPORTS_PRESCALER        FALSE
 #define STM32_ADC_SUPPORTS_OVERSAMPLING     FALSE
-#define STM32_ADC1_IRQ_SHARED_WITH_EXTI     TRUE
 #define STM32_ADC1_HANDLER                  Vector70
 #define STM32_ADC1_NUMBER                   12
 #define STM32_ADC1_DMA_MSK                  (STM32_DMA_STREAM_ID_MSK(1, 1) |\
@@ -607,6 +628,7 @@
 
 /* DMA attributes.*/
 #define STM32_ADVANCED_DMA                  TRUE
+#define STM32_DMA_SUPPORTS_DMAMUX           FALSE
 #define STM32_DMA_SUPPORTS_CSELR            FALSE
 #define STM32_DMA1_NUM_CHANNELS             5
 #define STM32_DMA2_NUM_CHANNELS             0
@@ -619,24 +641,24 @@
 
 #define STM32_DMA1_CH2_NUMBER               STM32_DMA1_CH23_NUMBER
 #define STM32_DMA1_CH3_NUMBER               STM32_DMA1_CH23_NUMBER
-#define DMA1_CH2_CMASK                      0x00000006U
-#define DMA1_CH3_CMASK                      0x00000006U
+#define STM32_DMA1_CH2_CMASK                0x00000006U
+#define STM32_DMA1_CH3_CMASK                0x00000006U
 
 #define STM32_DMA1_CH4_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH5_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH6_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH7_NUMBER               STM32_DMA1_CH4567_NUMBER
-#define DMA1_CH4_CMASK                      0x00000078U
-#define DMA1_CH5_CMASK                      0x00000078U
-#define DMA1_CH6_CMASK                      0x00000078U
-#define DMA1_CH7_CMASK                      0x00000078U
+#define STM32_DMA1_CH4_CMASK                0x00000078U
+#define STM32_DMA1_CH5_CMASK                0x00000078U
+#define STM32_DMA1_CH6_CMASK                0x00000078U
+#define STM32_DMA1_CH7_CMASK                0x00000078U
 
 /* ETH attributes.*/
 #define STM32_HAS_ETH                       FALSE
 
 /* EXTI attributes.*/
 #define STM32_EXTI_NUM_LINES                32
-#define STM32_EXTI_IMR_MASK                 0x7FF40000U
+#define STM32_EXTI_IMR1_MASK                0x7FF40000U
 
 /* GPIO attributes.*/
 #define STM32_HAS_GPIOA                     TRUE
@@ -674,7 +696,14 @@
 #define STM32_RTC_HAS_SUBSECONDS            TRUE
 #define STM32_RTC_HAS_PERIODIC_WAKEUPS      FALSE
 #define STM32_RTC_NUM_ALARMS                1
-#define STM32_RTC_HAS_INTERRUPTS            FALSE
+#define STM32_RTC_STORAGE_SIZE              0
+#define STM32_RTC_COMMON_HANDLER            Vector48
+#define STM32_RTC_COMMON_NUMBER             2
+#define STM32_RTC_ALARM_EXTI                17
+#define STM32_RTC_TAMP_STAMP_EXTI           19
+#define STM32_RTC_WKUP_EXTI                 20
+#define STM32_RTC_IRQ_ENABLE()                                              \
+  nvicEnableVector(STM32_RTC_COMMON_NUMBER, STM32_IRQ_EXTI17_20_IRQ_PRIORITY)
 
 /* SDIO attributes.*/
 #define STM32_HAS_SDIO                      FALSE
@@ -801,7 +830,6 @@
 #define STM32_HAS_ADC1                      TRUE
 #define STM32_ADC_SUPPORTS_PRESCALER        FALSE
 #define STM32_ADC_SUPPORTS_OVERSAMPLING     FALSE
-#define STM32_ADC1_IRQ_SHARED_WITH_EXTI     TRUE
 #define STM32_ADC1_HANDLER                  Vector70
 #define STM32_ADC1_NUMBER                   12
 #define STM32_ADC1_DMA_MSK                  (STM32_DMA_STREAM_ID_MSK(1, 1) |\
@@ -825,6 +853,7 @@
 
 /* DMA attributes.*/
 #define STM32_ADVANCED_DMA                  TRUE
+#define STM32_DMA_SUPPORTS_DMAMUX           FALSE
 #define STM32_DMA_SUPPORTS_CSELR            FALSE
 #define STM32_DMA1_NUM_CHANNELS             5
 #define STM32_DMA2_NUM_CHANNELS             0
@@ -837,24 +866,24 @@
 
 #define STM32_DMA1_CH2_NUMBER               STM32_DMA1_CH23_NUMBER
 #define STM32_DMA1_CH3_NUMBER               STM32_DMA1_CH23_NUMBER
-#define DMA1_CH2_CMASK                      0x00000006U
-#define DMA1_CH3_CMASK                      0x00000006U
+#define STM32_DMA1_CH2_CMASK                0x00000006U
+#define STM32_DMA1_CH3_CMASK                0x00000006U
 
 #define STM32_DMA1_CH4_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH5_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH6_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH7_NUMBER               STM32_DMA1_CH4567_NUMBER
-#define DMA1_CH4_CMASK                      0x00000078U
-#define DMA1_CH5_CMASK                      0x00000078U
-#define DMA1_CH6_CMASK                      0x00000078U
-#define DMA1_CH7_CMASK                      0x00000078U
+#define STM32_DMA1_CH4_CMASK                0x00000078U
+#define STM32_DMA1_CH5_CMASK                0x00000078U
+#define STM32_DMA1_CH6_CMASK                0x00000078U
+#define STM32_DMA1_CH7_CMASK                0x00000078U
 
 /* ETH attributes.*/
 #define STM32_HAS_ETH                       FALSE
 
 /* EXTI attributes.*/
 #define STM32_EXTI_NUM_LINES                32
-#define STM32_EXTI_IMR_MASK                 0x7FF40000U
+#define STM32_EXTI_IMR1_MASK                0x7FF40000U
 
 /* GPIO attributes.*/
 #define STM32_HAS_GPIOA                     TRUE
@@ -892,7 +921,14 @@
 #define STM32_RTC_HAS_SUBSECONDS            TRUE
 #define STM32_RTC_HAS_PERIODIC_WAKEUPS      FALSE
 #define STM32_RTC_NUM_ALARMS                1
-#define STM32_RTC_HAS_INTERRUPTS            FALSE
+#define STM32_RTC_STORAGE_SIZE              0
+#define STM32_RTC_COMMON_HANDLER            Vector48
+#define STM32_RTC_COMMON_NUMBER             2
+#define STM32_RTC_ALARM_EXTI                17
+#define STM32_RTC_TAMP_STAMP_EXTI           19
+#define STM32_RTC_WKUP_EXTI                 20
+#define STM32_RTC_IRQ_ENABLE()                                              \
+  nvicEnableVector(STM32_RTC_COMMON_NUMBER, STM32_IRQ_EXTI17_20_IRQ_PRIORITY)
 
 /* SDIO attributes.*/
 #define STM32_HAS_SDIO                      FALSE
@@ -1024,7 +1060,6 @@
 #define STM32_HAS_ADC1                      TRUE
 #define STM32_ADC_SUPPORTS_PRESCALER        FALSE
 #define STM32_ADC_SUPPORTS_OVERSAMPLING     FALSE
-#define STM32_ADC1_IRQ_SHARED_WITH_EXTI     TRUE
 #define STM32_ADC1_HANDLER                  Vector70
 #define STM32_ADC1_NUMBER                   12
 #define STM32_ADC1_DMA_MSK                  (STM32_DMA_STREAM_ID_MSK(1, 1) |\
@@ -1051,6 +1086,7 @@
 
 /* DMA attributes.*/
 #define STM32_ADVANCED_DMA                  TRUE
+#define STM32_DMA_SUPPORTS_DMAMUX           FALSE
 #define STM32_DMA_SUPPORTS_CSELR            FALSE
 #define STM32_DMA1_NUM_CHANNELS             5
 #define STM32_DMA2_NUM_CHANNELS             0
@@ -1064,24 +1100,24 @@
 
 #define STM32_DMA1_CH2_NUMBER               STM32_DMA1_CH23_NUMBER
 #define STM32_DMA1_CH3_NUMBER               STM32_DMA1_CH23_NUMBER
-#define DMA1_CH2_CMASK                      0x00000006U
-#define DMA1_CH3_CMASK                      0x00000006U
+#define STM32_DMA1_CH2_CMASK                0x00000006U
+#define STM32_DMA1_CH3_CMASK                0x00000006U
 
 #define STM32_DMA1_CH4_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH5_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH6_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH7_NUMBER               STM32_DMA1_CH4567_NUMBER
-#define DMA1_CH4_CMASK                      0x00000078U
-#define DMA1_CH5_CMASK                      0x00000078U
-#define DMA1_CH6_CMASK                      0x00000078U
-#define DMA1_CH7_CMASK                      0x00000078U
+#define STM32_DMA1_CH4_CMASK                0x00000078U
+#define STM32_DMA1_CH5_CMASK                0x00000078U
+#define STM32_DMA1_CH6_CMASK                0x00000078U
+#define STM32_DMA1_CH7_CMASK                0x00000078U
 
 /* ETH attributes.*/
 #define STM32_HAS_ETH                       FALSE
 
 /* EXTI attributes.*/
 #define STM32_EXTI_NUM_LINES                32
-#define STM32_EXTI_IMR_MASK                 0x0F940000U
+#define STM32_EXTI_IMR1_MASK                0x0F940000U
 
 /* GPIO attributes.*/
 #define STM32_HAS_GPIOA                     TRUE
@@ -1125,7 +1161,14 @@
 #define STM32_RTC_HAS_SUBSECONDS            TRUE
 #define STM32_RTC_HAS_PERIODIC_WAKEUPS      FALSE
 #define STM32_RTC_NUM_ALARMS                1
-#define STM32_RTC_HAS_INTERRUPTS            FALSE
+#define STM32_RTC_STORAGE_SIZE              0
+#define STM32_RTC_COMMON_HANDLER            Vector48
+#define STM32_RTC_COMMON_NUMBER             2
+#define STM32_RTC_ALARM_EXTI                17
+#define STM32_RTC_TAMP_STAMP_EXTI           19
+#define STM32_RTC_WKUP_EXTI                 20
+#define STM32_RTC_IRQ_ENABLE()                                              \
+  nvicEnableVector(STM32_RTC_COMMON_NUMBER, STM32_IRQ_EXTI17_20_IRQ_PRIORITY)
 
 /* SDIO attributes.*/
 #define STM32_HAS_SDIO                      FALSE
@@ -1263,7 +1306,6 @@
 #define STM32_HAS_ADC1                      TRUE
 #define STM32_ADC_SUPPORTS_PRESCALER        FALSE
 #define STM32_ADC_SUPPORTS_OVERSAMPLING     FALSE
-#define STM32_ADC1_IRQ_SHARED_WITH_EXTI     TRUE
 #define STM32_ADC1_HANDLER                  Vector70
 #define STM32_ADC1_NUMBER                   12
 #define STM32_ADC1_DMA_MSK                  (STM32_DMA_STREAM_ID_MSK(1, 1) |\
@@ -1287,6 +1329,7 @@
 
 /* DMA attributes.*/
 #define STM32_ADVANCED_DMA                  TRUE
+#define STM32_DMA_SUPPORTS_DMAMUX           FALSE
 #define STM32_DMA_SUPPORTS_CSELR            FALSE
 #define STM32_DMA1_NUM_CHANNELS             5
 #define STM32_DMA2_NUM_CHANNELS             0
@@ -1299,30 +1342,34 @@
 
 #define STM32_DMA1_CH2_NUMBER               STM32_DMA1_CH23_NUMBER
 #define STM32_DMA1_CH3_NUMBER               STM32_DMA1_CH23_NUMBER
-#define DMA1_CH2_CMASK                      0x00000006U
-#define DMA1_CH3_CMASK                      0x00000006U
+#define STM32_DMA1_CH2_CMASK                0x00000006U
+#define STM32_DMA1_CH3_CMASK                0x00000006U
 
 #define STM32_DMA1_CH4_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH5_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH6_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH7_NUMBER               STM32_DMA1_CH4567_NUMBER
-#define DMA1_CH4_CMASK                      0x00000078U
-#define DMA1_CH5_CMASK                      0x00000078U
-#define DMA1_CH6_CMASK                      0x00000078U
-#define DMA1_CH7_CMASK                      0x00000078U
+#define STM32_DMA1_CH4_CMASK                0x00000078U
+#define STM32_DMA1_CH5_CMASK                0x00000078U
+#define STM32_DMA1_CH6_CMASK                0x00000078U
+#define STM32_DMA1_CH7_CMASK                0x00000078U
 
 /* ETH attributes.*/
 #define STM32_HAS_ETH                       FALSE
 
 /* EXTI attributes.*/
 #define STM32_EXTI_NUM_LINES                32
-#define STM32_EXTI_IMR_MASK                 0x7F840000U
+#define STM32_EXTI_IMR1_MASK                0x7F840000U
 
 /* GPIO attributes.*/
 #define STM32_HAS_GPIOA                     TRUE
 #define STM32_HAS_GPIOB                     TRUE
 #define STM32_HAS_GPIOC                     TRUE
+#if defined(STM32F070x6)
+#define STM32_HAS_GPIOD                     FALSE
+#else
 #define STM32_HAS_GPIOD                     TRUE
+#endif
 #define STM32_HAS_GPIOE                     FALSE
 #define STM32_HAS_GPIOF                     TRUE
 #define STM32_HAS_GPIOG                     FALSE
@@ -1364,7 +1411,14 @@
 #define STM32_RTC_HAS_PERIODIC_WAKEUPS      FALSE
 #endif
 #define STM32_RTC_NUM_ALARMS                1
-#define STM32_RTC_HAS_INTERRUPTS            FALSE
+#define STM32_RTC_STORAGE_SIZE              0
+#define STM32_RTC_COMMON_HANDLER            Vector48
+#define STM32_RTC_COMMON_NUMBER             2
+#define STM32_RTC_ALARM_EXTI                17
+#define STM32_RTC_TAMP_STAMP_EXTI           19
+#define STM32_RTC_WKUP_EXTI                 20
+#define STM32_RTC_IRQ_ENABLE()                                              \
+  nvicEnableVector(STM32_RTC_COMMON_NUMBER, STM32_IRQ_EXTI17_20_IRQ_PRIORITY)
 
 /* SDIO attributes.*/
 #define STM32_HAS_SDIO                      FALSE
@@ -1513,7 +1567,6 @@
 #define STM32_HAS_ADC1                      TRUE
 #define STM32_ADC_SUPPORTS_PRESCALER        FALSE
 #define STM32_ADC_SUPPORTS_OVERSAMPLING     FALSE
-#define STM32_ADC1_IRQ_SHARED_WITH_EXTI     TRUE
 #define STM32_ADC1_HANDLER                  Vector70
 #define STM32_ADC1_NUMBER                   12
 #define STM32_ADC1_DMA_MSK                  (STM32_DMA_STREAM_ID_MSK(1, 1) |\
@@ -1548,6 +1601,7 @@
 
 /* DMA attributes.*/
 #define STM32_ADVANCED_DMA                  TRUE
+#define STM32_DMA_SUPPORTS_DMAMUX           FALSE
 #define STM32_DMA_SUPPORTS_CSELR            FALSE
 #define STM32_DMA1_NUM_CHANNELS             7
 #define STM32_DMA2_NUM_CHANNELS             0
@@ -1560,24 +1614,24 @@
 
 #define STM32_DMA1_CH2_NUMBER               STM32_DMA1_CH23_NUMBER
 #define STM32_DMA1_CH3_NUMBER               STM32_DMA1_CH23_NUMBER
-#define DMA1_CH2_CMASK                      0x00000006U
-#define DMA1_CH3_CMASK                      0x00000006U
+#define STM32_DMA1_CH2_CMASK                0x00000006U
+#define STM32_DMA1_CH3_CMASK                0x00000006U
 
 #define STM32_DMA1_CH4_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH5_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH6_NUMBER               STM32_DMA1_CH4567_NUMBER
 #define STM32_DMA1_CH7_NUMBER               STM32_DMA1_CH4567_NUMBER
-#define DMA1_CH4_CMASK                      0x00000078U
-#define DMA1_CH5_CMASK                      0x00000078U
-#define DMA1_CH6_CMASK                      0x00000078U
-#define DMA1_CH7_CMASK                      0x00000078U
+#define STM32_DMA1_CH4_CMASK                0x00000078U
+#define STM32_DMA1_CH5_CMASK                0x00000078U
+#define STM32_DMA1_CH6_CMASK                0x00000078U
+#define STM32_DMA1_CH7_CMASK                0x00000078U
 
 /* ETH attributes.*/
 #define STM32_HAS_ETH                       FALSE
 
 /* EXTI attributes.*/
 #define STM32_EXTI_NUM_LINES                32
-#define STM32_EXTI_IMR_MASK                 0x7F840000U
+#define STM32_EXTI_IMR1_MASK                0x7F840000U
 
 /* GPIO attributes.*/
 #define STM32_HAS_GPIOA                     TRUE
@@ -1624,7 +1678,14 @@
 #define STM32_RTC_HAS_SUBSECONDS            TRUE
 #define STM32_RTC_HAS_PERIODIC_WAKEUPS      TRUE
 #define STM32_RTC_NUM_ALARMS                1
-#define STM32_RTC_HAS_INTERRUPTS            FALSE
+#define STM32_RTC_STORAGE_SIZE              0
+#define STM32_RTC_COMMON_HANDLER            Vector48
+#define STM32_RTC_COMMON_NUMBER             2
+#define STM32_RTC_ALARM_EXTI                17
+#define STM32_RTC_TAMP_STAMP_EXTI           19
+#define STM32_RTC_WKUP_EXTI                 20
+#define STM32_RTC_IRQ_ENABLE()                                              \
+  nvicEnableVector(STM32_RTC_COMMON_NUMBER, STM32_IRQ_EXTI17_20_IRQ_PRIORITY)
 
 /* SDIO attributes.*/
 #define STM32_HAS_SDIO                      FALSE
@@ -1721,9 +1782,11 @@
 #define STM32_USART2_TX_DMA_CHN             0x00000000
 
 #define STM32_HAS_USART3                    TRUE
-#define STM32_USART3_RX_DMA_MSK             STM32_DMA_STREAM_ID_MSK(1, 6)
+#define STM32_USART3_RX_DMA_MSK             (STM32_DMA_STREAM_ID_MSK(1, 6) |\
+                                             STM32_DMA_STREAM_ID_MSK(1, 3))
 #define STM32_USART3_RX_DMA_CHN             0x00000000
-#define STM32_USART3_TX_DMA_MSK             STM32_DMA_STREAM_ID_MSK(1, 7)
+#define STM32_USART3_TX_DMA_MSK             (STM32_DMA_STREAM_ID_MSK(1, 7) |\
+                                             STM32_DMA_STREAM_ID_MSK(1, 2))
 #define STM32_USART3_TX_DMA_CHN             0x00000000
 
 #define STM32_HAS_UART4                     TRUE
@@ -1781,7 +1844,6 @@
 #define STM32_HAS_ADC1                      TRUE
 #define STM32_ADC_SUPPORTS_PRESCALER        FALSE
 #define STM32_ADC_SUPPORTS_OVERSAMPLING     FALSE
-#define STM32_ADC1_IRQ_SHARED_WITH_EXTI     TRUE
 #define STM32_ADC1_HANDLER                  Vector70
 #define STM32_ADC1_NUMBER                   12
 #define STM32_ADC1_DMA_MSK                  (STM32_DMA_STREAM_ID_MSK(1, 1) |\
@@ -1815,6 +1877,7 @@
 
 /* DMA attributes.*/
 #define STM32_ADVANCED_DMA                  TRUE
+#define STM32_DMA_SUPPORTS_DMAMUX           FALSE
 #define STM32_DMA_SUPPORTS_CSELR            TRUE
 
 #define STM32_DMA1_NUM_CHANNELS             7
@@ -1831,10 +1894,10 @@
 #define STM32_DMA1_CH3_NUMBER               STM32_DMA12_CH23_CH12_NUMBER
 #define STM32_DMA2_CH1_NUMBER               STM32_DMA12_CH23_CH12_NUMBER
 #define STM32_DMA2_CH2_NUMBER               STM32_DMA12_CH23_CH12_NUMBER
-#define DMA1_CH2_CMASK                      0x00000186U
-#define DMA1_CH3_CMASK                      0x00000186U
-#define DMA2_CH1_CMASK                      0x00000186U
-#define DMA2_CH2_CMASK                      0x00000186U
+#define STM32_DMA1_CH2_CMASK                0x00000186U
+#define STM32_DMA1_CH3_CMASK                0x00000186U
+#define STM32_DMA2_CH1_CMASK                0x00000186U
+#define STM32_DMA2_CH2_CMASK                0x00000186U
 
 #define STM32_DMA1_CH4_NUMBER               STM32_DMA12_CH4567_CH345_NUMBER
 #define STM32_DMA1_CH5_NUMBER               STM32_DMA12_CH4567_CH345_NUMBER
@@ -1843,20 +1906,20 @@
 #define STM32_DMA2_CH3_NUMBER               STM32_DMA12_CH4567_CH345_NUMBER
 #define STM32_DMA2_CH4_NUMBER               STM32_DMA12_CH4567_CH345_NUMBER
 #define STM32_DMA2_CH5_NUMBER               STM32_DMA12_CH4567_CH345_NUMBER
-#define DMA1_CH4_CMASK                      0x00000E78U
-#define DMA1_CH5_CMASK                      0x00000E78U
-#define DMA1_CH6_CMASK                      0x00000E78U
-#define DMA1_CH7_CMASK                      0x00000E78U
-#define DMA2_CH3_CMASK                      0x00000E78U
-#define DMA2_CH4_CMASK                      0x00000E78U
-#define DMA2_CH5_CMASK                      0x00000E78U
+#define STM32_DMA1_CH4_CMASK                0x00000E78U
+#define STM32_DMA1_CH5_CMASK                0x00000E78U
+#define STM32_DMA1_CH6_CMASK                0x00000E78U
+#define STM32_DMA1_CH7_CMASK                0x00000E78U
+#define STM32_DMA2_CH3_CMASK                0x00000E78U
+#define STM32_DMA2_CH4_CMASK                0x00000E78U
+#define STM32_DMA2_CH5_CMASK                0x00000E78U
 
 /* ETH attributes.*/
 #define STM32_HAS_ETH                       FALSE
 
 /* EXTI attributes.*/
 #define STM32_EXTI_NUM_LINES                32
-#define STM32_EXTI_IMR_MASK                 0x7F840000U
+#define STM32_EXTI_IMR1_MASK                0x7F840000U
 
 /* GPIO attributes.*/
 #define STM32_HAS_GPIOA                     TRUE
@@ -1904,7 +1967,14 @@
 #define STM32_RTC_HAS_SUBSECONDS            TRUE
 #define STM32_RTC_HAS_PERIODIC_WAKEUPS      TRUE
 #define STM32_RTC_NUM_ALARMS                1
-#define STM32_RTC_HAS_INTERRUPTS            FALSE
+#define STM32_RTC_STORAGE_SIZE              0
+#define STM32_RTC_COMMON_HANDLER            Vector48
+#define STM32_RTC_COMMON_NUMBER             2
+#define STM32_RTC_ALARM_EXTI                17
+#define STM32_RTC_TAMP_STAMP_EXTI           19
+#define STM32_RTC_WKUP_EXTI                 20
+#define STM32_RTC_IRQ_ENABLE()                                              \
+  nvicEnableVector(STM32_RTC_COMMON_NUMBER, STM32_IRQ_EXTI17_20_IRQ_PRIORITY)
 
 /* SDIO attributes.*/
 #define STM32_HAS_SDIO                      FALSE

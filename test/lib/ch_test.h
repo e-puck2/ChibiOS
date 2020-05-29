@@ -36,22 +36,30 @@
 /**
  * @brief   Maximum number of entries in the tokens buffer.
  */
-#if !defined(TEST_MAX_TOKENS) || defined(__DOXYGEN__)
-#define TEST_MAX_TOKENS                     16
+#if !defined(TEST_CFG_MAX_TOKENS) || defined(__DOXYGEN__)
+#define TEST_CFG_MAX_TOKENS                 16
 #endif
 
 /**
  * @brief   Delay inserted between test cases.
  */
-#if !defined(TEST_DELAY_BETWEEN_TESTS) || defined(__DOXYGEN__)
-#define TEST_DELAY_BETWEEN_TESTS            200
+#if !defined(TEST_CFG_DELAY_BETWEEN_TESTS) || defined(__DOXYGEN__)
+#define TEST_CFG_DELAY_BETWEEN_TESTS        200
 #endif
 
 /**
  * @brief   Delay inserted between test cases.
  */
-#if !defined(TEST_SHOW_SEQUENCES) || defined(__DOXYGEN__)
-#define TEST_SHOW_SEQUENCES                 TRUE
+#if !defined(TEST_CFG_SHOW_SEQUENCES) || defined(__DOXYGEN__)
+#define TEST_CFG_SHOW_SEQUENCES             TRUE
+#endif
+
+/**
+ * @brief   Print executable sizes.
+ * @note    Requires specific linker scatter files.
+ */
+#if !defined(TEST_CFG_SIZE_REPORT) || defined(__DOXYGEN__)
+#define TEST_CFG_SIZE_REPORT                TRUE
 #endif
 
 /*===========================================================================*/
@@ -103,6 +111,13 @@ typedef struct {
  * @param[in] step      the step number
  */
 #define test_set_step(step) test_step = (step)
+
+/**
+ * @brief   End step marker.
+ *
+ * @param[in] step      the step number
+ */
+#define test_end_step(step) (void)(step);
 
 /**
  * @brief   Test failure enforcement.

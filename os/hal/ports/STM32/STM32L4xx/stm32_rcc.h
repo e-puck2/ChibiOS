@@ -567,6 +567,29 @@
  * @api
  */
 #define rccResetI2C3() rccResetAPB1R1(RCC_APB1RSTR1_I2C3RST)
+
+/**
+ * @brief Enables the I2C4 peripheral clock.
+ *
+ * @param[in] lp low power enable flag
+ *
+ * @api
+ */
+#define rccEnableI2C4(lp) rccEnableAPB1R2(RCC_APB1ENR2_I2C4EN, lp)
+
+/**
+ * @brief Disables the I2C4 peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableI2C4() rccDisableAPB1R1(RCC_APB1ENR2_I2C4EN)
+
+/**
+ * @brief Resets the I2C4 peripheral.
+ *
+ * @api
+ */
+#define rccResetI2C4() rccResetAPB1R1(RCC_APB1RSTR2_I2C4RST)
 /** @} */
 
 /**
@@ -623,6 +646,34 @@
  * @api
  */
 #define rccResetQUADSPI1() rccResetAHB3(RCC_AHB3RSTR_QSPIRST)
+/** @} */
+
+/**
+ * @name    RNG peripherals specific RCC operations
+ * @{
+ */
+/**
+ * @brief   Enables the RNG peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableRNG(lp) rccEnableAHB2(RCC_AHB2ENR_RNGEN, lp)
+
+/**
+ * @brief   Disables the RNG peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableRNG() rccDisableAHB2(RCC_AHB2ENR_RNGEN)
+
+/**
+ * @brief   Resets the RNG peripheral.
+ *
+ * @api
+ */
+#define rccResetRNG() rccResetAHB2(RCC_AHB2RSTR_RNGRST)
 /** @} */
 
 /**
@@ -1154,6 +1205,34 @@
  * @api
  */
 #define rccResetUSB() rccResetAPB1R1(RCC_APB1RSTR1_USBFSRST)
+/** @} */
+
+/**
+ * @name    CRC peripheral specific RCC operations
+ * @{
+ */
+/**
+ * @brief   Enables the CRC peripheral clock.
+ *
+ * @param[in] lp        low power enable flag
+ *
+ * @api
+ */
+#define rccEnableCRC(lp) rccEnableAHB1(RCC_AHB1ENR_CRCEN, lp)
+
+/**
+ * @brief   Disables the CRC peripheral clock.
+ *
+ * @api
+ */
+#define rccDisableCRC() rccDisableAHB1(RCC_AHB1ENR_CRCEN)
+
+/**
+ * @brief   Resets the CRC peripheral.
+ *
+ * @api
+ */
+#define rccResetCRC() rccResetAHB1(RCC_AHB1RSTR_CRCRST)
 /** @} */
 
 /**

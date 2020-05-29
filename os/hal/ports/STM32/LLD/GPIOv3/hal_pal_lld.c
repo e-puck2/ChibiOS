@@ -30,23 +30,16 @@
 /* Driver local definitions.                                                 */
 /*===========================================================================*/
 
-/* Handling a difference in ST headers.*/
-#if defined(STM32L4XX)
-#define EMR     EMR1
-#define IMR     IMR1
-#define PR      PR1
-#define RTSR    RTSR1
-#define FTSR    FTSR1
-#endif
-
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
 
+#if (PAL_USE_WAIT == TRUE) || (PAL_USE_CALLBACKS == TRUE) || defined(__DOXYGEN__)
 /**
  * @brief   Event records for the 16 GPIO EXTI channels.
  */
 palevent_t _pal_events[16];
+#endif
 
 /*===========================================================================*/
 /* Driver local variables and types.                                         */
@@ -172,8 +165,8 @@ void _pal_lld_enablepadevent(ioportid_t port,
   /* Multiple channel setting of the same channel not allowed, first disable
      it. This is done because on STM32 the same channel cannot be mapped on
      multiple ports.*/
-  osalDbgAssert(((EXTI->RTSR & padmask) == 0U) &&
-                ((EXTI->FTSR & padmask) == 0U), "channel already in use");
+  osalDbgAssert(((EXTI->RTSR1 & padmask) == 0U) &&
+                ((EXTI->FTSR1 & padmask) == 0U), "channel already in use");
 
   /* Index and mask of the SYSCFG CR register to be used.*/
   cridx  = (uint32_t)pad >> 2U;
@@ -189,17 +182,17 @@ void _pal_lld_enablepadevent(ioportid_t port,
 
   /* Programming edge registers.*/
   if (mode & PAL_EVENT_MODE_RISING_EDGE)
-    EXTI->RTSR |= padmask;
+    EXTI->RTSR1 |= padmask;
   else
-    EXTI->RTSR &= ~padmask;
+    EXTI->RTSR1 &= ~padmask;
   if (mode & PAL_EVENT_MODE_FALLING_EDGE)
-    EXTI->FTSR |= padmask;
+    EXTI->FTSR1 |= padmask;
   else
-    EXTI->FTSR &= ~padmask;
+    EXTI->FTSR1 &= ~padmask;
 
   /* Programming interrupt and event registers.*/
-  EXTI->IMR |= padmask;
-  EXTI->EMR &= ~padmask;
+  EXTI->IMR1 |= padmask;
+  EXTI->EMR1 &= ~padmask;
 }
 
 /**
@@ -214,8 +207,8 @@ void _pal_lld_enablepadevent(ioportid_t port,
 void _pal_lld_disablepadevent(ioportid_t port, iopadid_t pad) {
   uint32_t padmask, rtsr1, ftsr1;
 
-  rtsr1 = EXTI->RTSR;
-  ftsr1 = EXTI->FTSR;
+  rtsr1 = EXTI->RTSR1;
+  ftsr1 = EXTI->FTSR1;
 
   /* Mask of the pad.*/
   padmask = 1U << (uint32_t)pad;
@@ -237,11 +230,11 @@ void _pal_lld_disablepadevent(ioportid_t port, iopadid_t pad) {
     osalDbgAssert(crport == portidx, "channel mapped on different port");
 
     /* Disabling channel.*/
-    EXTI->IMR  &= ~padmask;
-    EXTI->EMR  &= ~padmask;
-    EXTI->RTSR  = rtsr1 & ~padmask;
-    EXTI->FTSR  = ftsr1 & ~padmask;
-    EXTI->PR    = padmask;
+    EXTI->IMR1  &= ~padmask;
+    EXTI->EMR1  &= ~padmask;
+    EXTI->RTSR1  = rtsr1 & ~padmask;
+    EXTI->FTSR1  = ftsr1 & ~padmask;
+    EXTI->PR1    = padmask;
 
 #if PAL_USE_CALLBACKS || PAL_USE_WAIT
   /* Callback cleared and/or thread reset.*/

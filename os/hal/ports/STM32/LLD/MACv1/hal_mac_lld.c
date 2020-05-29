@@ -143,7 +143,7 @@ static void mii_find_phy(MACDriver *macp) {
   unsigned n = STM32_MAC_PHY_TIMEOUT;
  do {
 #endif
-    for (i = 0U; i < 31U; i++) {
+    for (i = 0U; i <= 31U; i++) {
       macp->phyaddr = i << 11U;
       ETH->MACMIIDR = (i << 6U) | MACMIIDR_CR;
       if ((mii_read(macp, MII_PHYSID1) == (BOARD_PHY_ID >> 16U)) &&
@@ -320,7 +320,7 @@ void mac_lld_start(MACDriver *macp) {
   rccEnableETH(true);
 #if defined(STM32_MAC_DMABMR_SR)
   ETH->DMABMR |= ETH_DMABMR_SR;
-  while(ETH->DMABMR & ETH_DMABMR_SR)
+  while (ETH->DMABMR & ETH_DMABMR_SR)
     ;
 #endif
 
@@ -364,10 +364,14 @@ void mac_lld_start(MACDriver *macp) {
   /* DMA general settings.*/
   ETH->DMABMR   = ETH_DMABMR_AAB | ETH_DMABMR_RDP_1Beat | ETH_DMABMR_PBL_1Beat;
 
+  /* Check because errata on some devices. There should be no need to
+     disable flushing because the TXFIFO should be empty on macStart().*/
+#if !defined(STM32_MAC_DISABLE_TX_FLUSH)
   /* Transmit FIFO flush.*/
   ETH->DMAOMR   = ETH_DMAOMR_FTF;
   while (ETH->DMAOMR & ETH_DMAOMR_FTF)
     ;
+#endif
 
   /* DMA final configuration and start.*/
   ETH->DMAOMR   = ETH_DMAOMR_DTCEFD | ETH_DMAOMR_RSF | ETH_DMAOMR_TSF |
@@ -423,15 +427,12 @@ msg_t mac_lld_get_transmit_descriptor(MACDriver *macp,
   if (!macp->link_up)
     return MSG_TIMEOUT;
 
-  osalSysLock();
-
   /* Get Current TX descriptor.*/
   tdes = macp->txptr;
 
   /* Ensure that descriptor isn't owned by the Ethernet DMA or locked by
      another thread.*/
   if (tdes->tdes0 & (STM32_TDES0_OWN | STM32_TDES0_LOCKED)) {
-    osalSysUnlock();
     return MSG_TIMEOUT;
   }
 
@@ -440,8 +441,6 @@ msg_t mac_lld_get_transmit_descriptor(MACDriver *macp,
 
   /* Next TX descriptor to use.*/
   macp->txptr = (stm32_eth_tx_descriptor_t *)tdes->tdes3;
-
-  osalSysUnlock();
 
   /* Set the buffer size and configuration.*/
   tdp->offset   = 0;
@@ -499,8 +498,6 @@ msg_t mac_lld_get_receive_descriptor(MACDriver *macp,
                                      MACReceiveDescriptor *rdp) {
   stm32_eth_rx_descriptor_t *rdes;
 
-  osalSysLock();
-
   /* Get Current RX descriptor.*/
   rdes = macp->rxptr;
 
@@ -519,7 +516,6 @@ msg_t mac_lld_get_receive_descriptor(MACDriver *macp,
       rdp->physdesc = rdes;
       macp->rxptr   = (stm32_eth_rx_descriptor_t *)rdes->rdes3;
 
-      osalSysUnlock();
       return MSG_OK;
     }
     /* Invalid frame found, purging.*/
@@ -530,7 +526,6 @@ msg_t mac_lld_get_receive_descriptor(MACDriver *macp,
   /* Next descriptor to check.*/
   macp->rxptr = rdes;
 
-  osalSysUnlock();
   return MSG_TIMEOUT;
 }
 

@@ -94,6 +94,24 @@
 #endif
 
 /**
+ * @brief   UART driver on UART7 enable switch.
+ * @details If set to @p TRUE the support for UART7 is included.
+ * @note    The default is @p FALSE.
+ */
+#if !defined(STM32_UART_USE_UART7) || defined(__DOXYGEN__)
+#define STM32_UART_USE_UART7                FALSE
+#endif
+
+/**
+ * @brief   UART driver on UART8 enable switch.
+ * @details If set to @p TRUE the support for UART8 is included.
+ * @note    The default is @p FALSE.
+ */
+#if !defined(STM32_UART_USE_UART8) || defined(__DOXYGEN__)
+#define STM32_UART_USE_UART8                FALSE
+#endif
+
+/**
  * @brief   USART1 interrupt priority level setting.
  */
 #if !defined(STM32_UART_USART1_IRQ_PRIORITY) || defined(__DOXYGEN__)
@@ -133,6 +151,20 @@
  */
 #if !defined(STM32_UART_USART6_IRQ_PRIORITY) || defined(__DOXYGEN__)
 #define STM32_UART_USART6_IRQ_PRIORITY      12
+#endif
+
+/**
+ * @brief   UART7 interrupt priority level setting.
+ */
+#if !defined(STM32_UART_UART7_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_UART_UART7_IRQ_PRIORITY       12
+#endif
+
+/**
+ * @brief   UART8 interrupt priority level setting.
+ */
+#if !defined(STM32_UART_UART8_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_UART_UART8_IRQ_PRIORITY       12
 #endif
 
 /**
@@ -196,6 +228,26 @@
 #endif
 
 /**
+ * @brief   UART7 DMA priority (0..3|lowest..highest).
+ * @note    The priority level is used for both the TX and RX DMA channels but
+ *          because of the channels ordering the RX channel has always priority
+ *          over the TX channel.
+ */
+#if !defined(STM32_UART_UART7_DMA_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_UART_UART7_DMA_PRIORITY       0
+#endif
+
+/**
+ * @brief   UART8 DMA priority (0..3|lowest..highest).
+ * @note    The priority level is used for both the TX and RX DMA channels but
+ *          because of the channels ordering the RX channel has always priority
+ *          over the TX channel.
+ */
+#if !defined(STM32_UART_UART8_DMA_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_UART_UART8_DMA_PRIORITY       0
+#endif
+
+/**
  * @brief   USART DMA error hook.
  * @note    The default action for DMA errors is a system halt because DMA
  *          error can only happen because programming errors.
@@ -221,7 +273,7 @@
 #error "USART3 not present in the selected device"
 #endif
 
-#if STM32_UART_USE_UART4 
+#if STM32_UART_USE_UART4
 #if !STM32_HAS_UART4
 #error "UART4 not present in the selected device"
 #endif
@@ -247,9 +299,18 @@
 #error "USART6 not present in the selected device"
 #endif
 
+#if STM32_UART_USE_UART7 && !STM32_HAS_UART7
+#error "UART7 not present in the selected device"
+#endif
+
+#if STM32_UART_USE_UART8 && !STM32_HAS_UART8
+#error "UART8 not present in the selected device"
+#endif
+
 #if !STM32_UART_USE_USART1 && !STM32_UART_USE_USART2 &&                     \
     !STM32_UART_USE_USART3 && !STM32_UART_USE_UART4 &&                      \
-    !STM32_UART_USE_UART5  && !STM32_UART_USE_USART6
+    !STM32_UART_USE_UART5  && !STM32_UART_USE_USART6 &&                     \
+    !STM32_UART_USE_UART7  && !STM32_UART_USE_UART8
 #error "UART driver activated but no USART/UART peripheral assigned"
 #endif
 
@@ -283,6 +344,16 @@
 #error "Invalid IRQ priority assigned to USART6"
 #endif
 
+#if STM32_UART_USE_UART7 &&                                                 \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_UART7_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to UART7"
+#endif
+
+#if STM32_UART_USE_UART8 &&                                                 \
+    !OSAL_IRQ_IS_VALID_PRIORITY(STM32_UART_UART8_IRQ_PRIORITY)
+#error "Invalid IRQ priority assigned to UART8"
+#endif
+
 #if STM32_UART_USE_USART1 &&                                                \
     !STM32_DMA_IS_VALID_PRIORITY(STM32_UART_USART1_DMA_PRIORITY)
 #error "Invalid DMA priority assigned to USART1"
@@ -311,6 +382,16 @@
 #if STM32_UART_USE_USART6 &&                                                \
     !STM32_DMA_IS_VALID_PRIORITY(STM32_UART_USART6_DMA_PRIORITY)
 #error "Invalid DMA priority assigned to USART6"
+#endif
+
+#if STM32_UART_USE_UART7 &&                                                 \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_UART_UART7_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to UART7"
+#endif
+
+#if STM32_UART_USE_UART8 &&                                                 \
+    !STM32_DMA_IS_VALID_PRIORITY(STM32_UART_UART8_DMA_PRIORITY)
+#error "Invalid DMA priority assigned to UART8"
 #endif
 
 /* The following checks are only required when there is a DMA able to
@@ -345,6 +426,16 @@
 #if STM32_UART_USE_USART6 && (!defined(STM32_UART_USART6_RX_DMA_STREAM) ||  \
                               !defined(STM32_UART_USART6_TX_DMA_STREAM))
 #error "USART6 DMA streams not defined"
+#endif
+
+#if STM32_UART_USE_UART7 && (!defined(STM32_UART_UART7_RX_DMA_STREAM) ||    \
+                             !defined(STM32_UART_UART7_TX_DMA_STREAM))
+#error "UART7 DMA streams not defined"
+#endif
+
+#if STM32_UART_USE_UART8 && (!defined(STM32_UART_UART8_RX_DMA_STREAM) ||    \
+                             !defined(STM32_UART_UART8_TX_DMA_STREAM))
+#error "UART8 DMA streams not defined"
 #endif
 
 /* Check on the validity of the assigned DMA channels.*/
@@ -421,6 +512,30 @@
 #endif
 #endif /* STM32_ADVANCED_DMA */
 
+#if STM32_UART_USE_UART7 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART7_RX_DMA_STREAM,                  \
+                           STM32_UART7_RX_DMA_MSK)
+#error "invalid DMA stream associated to UART7 RX"
+#endif
+
+#if STM32_UART_USE_UART7 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART7_TX_DMA_STREAM,                  \
+                           STM32_UART7_TX_DMA_MSK)
+#error "invalid DMA stream associated to UART7 TX"
+#endif
+
+#if STM32_UART_USE_UART8 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART8_RX_DMA_STREAM,                  \
+                           STM32_UART8_RX_DMA_MSK)
+#error "invalid DMA stream associated to UART8 RX"
+#endif
+
+#if STM32_UART_USE_UART8 &&                                                 \
+    !STM32_DMA_IS_VALID_ID(STM32_UART_UART8_TX_DMA_STREAM,                  \
+                           STM32_UART8_TX_DMA_MSK)
+#error "invalid DMA stream associated to UART8 TX"
+#endif
+
 #if !defined(STM32_DMA_REQUIRED)
 #define STM32_DMA_REQUIRED
 #endif
@@ -489,6 +604,12 @@ typedef struct {
   uartecb_t                 rxerr_cb;
   /* End of the mandatory fields.*/
   /**
+   * @brief   Receiver timeout callback.
+   * @details Handles idle interrupts depending on configured
+   *          flags in CR registers and supported hardware features.
+   */
+  uartcb_t                  timeout_cb;
+  /**
    * @brief Bit rate.
    */
   uint32_t                  speed;
@@ -555,9 +676,13 @@ struct UARTDriver {
    */
   USART_TypeDef             *usart;
   /**
-   * @brief DMA mode bit mask.
+   * @brief Receive DMA mode bit mask.
    */
-  uint32_t                  dmamode;
+  uint32_t                  dmarxmode;
+  /**
+   * @brief Send DMA mode bit mask.
+   */
+  uint32_t                  dmatxmode;
   /**
    * @brief Receive DMA channel.
    */
@@ -602,6 +727,14 @@ extern UARTDriver UARTD5;
 
 #if STM32_UART_USE_USART6 && !defined(__DOXYGEN__)
 extern UARTDriver UARTD6;
+#endif
+
+#if STM32_UART_USE_UART7 && !defined(__DOXYGEN__)
+extern UARTDriver UARTD7;
+#endif
+
+#if STM32_UART_USE_UART8 && !defined(__DOXYGEN__)
+extern UARTDriver UARTD8;
 #endif
 
 #ifdef __cplusplus

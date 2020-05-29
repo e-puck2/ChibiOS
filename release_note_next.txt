@@ -3,138 +3,118 @@
 ******************************************************************************
 
 ChibiOS next is composed of several independent but inter-operable
-sub-projects: RT, NIL, HAL, EX. Plus several external libraries
+sub-projects: RT, NIL, SB, HAL, EX. Plus several external libraries
 integrated in our structure: WolfSSL, FatFS and lwIP.
 
 *** ChibiOS next highlights ****
 
-This release is focused on features and  general improvements, HAL, RT and NIL
-received a series of important improvements, new features have been added.
+- New NIL 4.0.
+- New ARM SandBox subsystem.
+- New modules in OSLIB.
+- Support for STM32G0xx and STM32G4xx.
+- Support for all STM32 timers in all drivers.
+- Improved support for all STM32s.
+- Improved MFS module.
 
 *** ChibiOS next general improvements ***
 
-- WolfSSL 1.12.2 has been integrated. HTTPS demo added.
-- FatFS 0.13 has been integrated.
-- lwIP 2.0.3 has been integrated.
-- CMSIS 5.1.1 has been integrated.
-- Improved build system based on make.
-- Improved integration with Eclipse, launch configurations have been
-  centralized for many projects.
-- Several HAL and test applications have become "multi projects", a single
-  project is able to build for multiple targets/boards.
-- Improved test engine.
-- Added a test suite generator written in FTL, now it is possible to generate
-  test code without the need of SPC5Studio.
-- Added a board files generator written in FTL, now it is possible to generate
-  board files without the need of ChibiStudio.
+- Lots of style fixes thanks to the new code checker tool.
+- Improved syscalls.c support.
+- Updated FatFS to version 0.13c.
+- Updated lwIP to version 2.1.2.
+- Updated WolfSSL to latest version.
+- Added support for .cc files extensions in makefiles.
 
 *** What's new in RT/NIL ports ***
 
-- GHS compiler support added to the Power e200z port.
-- Experimental ARM Cortex-A Trust Zone support.
+- Added support for a syscall entry point, it is used by the new ChibiOS/SB
+  subsystem.
 
-*** What's new in OS Library ***
+*** What's new in OS Library 1.2.0 ***
 
-- OS library now has its own test suite.
-- Mailbox API names changed by adding "Timeout" to those function that have
-  timeout capability, for consistency with the rest of the system.
-- Added an "Objects Factory" to the OS Library, it allows to dynamically
-  allocate reference-counted kernel objects/buffers or to register
-  static objects. Allocated/registered objects can be retrieved by name.
-- Added an "Objects FIFO" object to the OS Library, it allows to
-  exchange complex objects between threads/ISRs. It is based on a
-  mailbox and a guarded memory pool.
-- Added alignment handling to memory pools.
-- Added a new chGuardedPoolAllocI() API to the guarded memory pools.
+- Improved OSLIB initialization.
+- Modified core allocator to be able to get blocks starting from bottom
+  or top of the available memory range.
+- Re-introduced missing chGuardedPoolGetCounterI() function to guarded
+  pools allocator.
+- Added a cache class to OSLIB (experimental).
+- Added support for delegate threads.
+- Added support for asynchronous jobs queues.
 
-*** What's new in RT 5.0.0 ***
+*** What's new in SB 1.0.0 ***
 
-- The type systime_t has been split in systime_t and sysinterval_t, the
-  two can have different size. The system is now more rigorous in time
-  handling, an absolute time is something different from an interval,
-  sysinterval_t can be larger than the systime_t, this means that it is
-  now possible to use very long intervals when the system time uses a small
-  counter.
-- Time conversion macros have been renamed in TIME_S2I(), TIME_MS2I(),
-  TIME_US2(), TIME_I2S(), TIME_I2MS() and TIME_I2US. Conversion is now done
-  by casting all operands to a large time_conv_t type improving safety by
-  eliminating integer truncations.
-- Time conversion functions have been renamed in: chTimeS2I(), chTimeMS2I(),
-  chTimeUS2I(), chTimeI2S(), chTimeI2MS() and chTimeI2US().
-- New functions have been added for dealing with operations with time and
-  intervals: chTimeAddX() and chTimeDiffX().
-- All functions that have a timeout parameter now take a sysinterval_t type
-  instead of systime_t.
-- Improved test suite.
-- Enhanced Events API, added chEvtGetAndClearEventsI() and chEvtAddEventsI().
-- The chconf.h configuration files now are tagged with the version
-  number for safety. The system rejects obsolete files during
-  compilation. Stronger checks are performed on chconf.h, now missing
-  settings trigger an error instead of getting a default.
+- New sandbox subsystem. It allows to have untrusted/unreliable code to
+  be run into one or more isolated enclaves (experimental).
+  - Currently only GCC is supported.
+  
+*** What's new in RT 6.1.0 ***
 
-*** What's new in NIL 3.0.0 ***
+- Added a "library generator" project for RT, it allows to
+  generate a library with a pre-configured RT. It also includes
+  an "header generator" able to generate an unified "ch.h" with
+  all options resolved.
+- New functions: chSemResetWithMessageI() and chSemResetWithMessage().
+- Improvements to messages, new functions chMsgWaitS(), chMsgWaitTimeoutS(),
+  chMsgWaitTimeout(), chMsgPollS(), chMsgPoll().
 
-- The type systime_t has been split in systime_t and sysinterval_t. The
-  system is now more rigorous in time handling, an absolute time is
-  something different from an interval.
-- Time conversion macros have been renamed in TIME_S2I(), TIME_MS2I(),
-  TIME_US2(), TIME_I2S(), TIME_I2MS() and TIME_I2US. Conversion is now done
-  by casting all operands to a large time_conv_t type improving safety by
-  eliminating integer truncations.
-- New functions have been added for dealing with operations with time and
-  intervals: chTimeAddX() and chTimeDiffX().
-- All functions that have a timeout parameter now take a sysinterval_t type
-  instead of systime_t.
-- Improved test suite.
-- The chconf.h configuration files now are tagged with the version
-  number for safety. The system rejects obsolete files during
-  compilation.
+*** What's new in NIL 4.0.0 ***
 
-*** What's new in HAL 6.0.0 ***
+- New NIL 4.
+  - Increased API compatibility with RT.
+  - Full threading (create, wait, exit).
+  - Events support like in RT (optional).
+  - Messages support like in RT (optional).
+  - Full OSLIB support.
+- New functions: chSemResetWithMessageI() and chSemResetWithMessage().
+- Improvements to messages, new functions chMsgWaitS(),
+  chMsgWaitTimeoutS(), chMsgWaitTimeout().
 
-- Added a Managed Flash Storage module to the HAL. This modules handles
-  garbage collection, storage self-repair and wear leveling.
-- Improved serial driver.
-  - Added a "control" function to the channels interface, it allows to add
-    custom features to the various implementations.
-  - Added I-class functions to the serial driver: sdGetI(), sdReadI(),
-    sdPutI() and sdWriteI().
-- Improved PAL driver.
-  - Added an user parameter to the PAL callbacks for consistency with other
-    drivers.
-  - Added blocking functions for edge synchronization: palWaitLineTimeout()
-    and palWaitLineTimeoutS().
-- Improved SPI driver.
-  - Now there are multiple modes for CS handling: by PAL pad (previous one), by
-    PAL line, by PAL port mask and LLD-specific.
-  - Added circular continuous mode to the SPI driver.
-- Improved CAN driver.
-  - Added callback capability to the CAN driver. Now it is possible to use
-    callbacks in place of classic events.
-- Improved USB driver.
-  - Added a usbWakeupHost() function for standby exit.
-- Improved HAL queues to increase performance. Added new functions: iqGetI(),
-  iqReadI(), oqPutI() and oqWriteI().
+*** What's new in HAL 7.1.0 ***
 
-*** What's new in EX 1.0.0 ***
+- Added a new interface for range-finder devices.
+- Added transactional updates to MFS. Doubled data headers magic numbers
+  for improved safety and to keep the final write aligned to 64 bits.
+- Modified AES GCM function signatures.
+- Added and embedded flash driver model in HAL. Added an implementation
+  for STM32F1xx, STM32L4xx, STM32L4xx+. 
+- Modified the ST driver to support, optionally, multiple additional
+  callback-capable channels.
+- Added error handling to WSPI driver, now LLDs can report error
+  conditions to upper layers.
+- Added canTryAbortX() function to CAN driver, implemented
+  for STM32 CANv1.
+       
+*** What's new in EX 1.1.0 ***
 
-- No changes.
 
 *** What's new in AVR HAL support ***
 
-- Added initial ATtiny167 support.
-- Added initial ATXmega128a4u support.
-- Improvement of SPI, EXT, PAL low level drivers.
 
 *** What's new in STM32 HAL support ***
 
-- Updated SPI drivers to implement the new circular mode of the HAL SPI
-  driver model.
-- Updated STM32F1xx headers to 1.6, STM32F3xx to 1.9, STM32L0xx to 1.10,
-  STM32L4xx to 1.9, STM32H7xx to 1.1.
-- Implemented PAL enhancements in GPIOv1, GPIOv2 and GPIOv3 implementations.
-- Modified the STM32 OTGv1 driver to work without pump thread, transfers
-  are now done in the ISR. The driver is now greatly simplified.
-- Added STM32L496xx/STM32L4A6xx support.
-- Added STM32F030x4 support.
-- Added initial STM32H7xx support.
+- Added support for STM32G0xx.
+- Added support for STM32G4xx.
+- Added support for ADuCM36x.
+- Improved DMAv1 and DMAv2 drivers.
+- TRNG support added to STM32F7xx, STM32G0xx, STM32G4xx, STM32H7xx and
+  STM32L0xx.
+- Idle callback support for STM32 USARTv1 UART driver.
+- Improved support for shared handlers. Now there are centralized
+  inclusion modules (.inc) containing shared handlers. The new modules
+  can be included by the various STM32 platforms. So far the new system
+  has been implemented for STM32G0, STM32G4, STM32L0, STM32L4, STM32L4+,
+  STM32F7, STM3277.
+- Added support for timers 9..17, 20..22 to STM32 PWM driver.
+- Added support for timers 9..17, 20..22 to STM32 ICU driver.
+- Added support for timers 10 and 13 to STM32 GPT driver.
+- Added support for timers 9..14 to STM32 ST driver.
+- PAL, SERIAL and SPI support added to ADuCM36x.
+
+*** What's new in tools ***
+
+- Code style checker tool added.
+- Introduced mcuconf.h updater tool for STM32F407, STM32L052/L053/L062/L063,
+  STM32L072/L073, STM32G4x1/G4x3/G4x4.
+- Added script to generate board files from command line, just
+  run ./os/hal/boards/genboard.sh with the board directory name
+  as parameter.

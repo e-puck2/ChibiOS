@@ -40,7 +40,7 @@
 #define HALCONF_H
 
 #define _CHIBIOS_HAL_CONF_
-#define _CHIBIOS_HAL_CONF_VER_6_0_
+#define _CHIBIOS_HAL_CONF_VER_7_1_
 
 #include "mcuconf.h"
 
@@ -80,10 +80,10 @@
 #endif
 
 /**
- * @brief   Enables the EXT subsystem.
+ * @brief   Enables the EFlash subsystem.
  */
-#if !defined(HAL_USE_EXT) || defined(__DOXYGEN__)
-#define HAL_USE_EXT                         ${doc.HAL_USE_EXT!"FALSE"}
+#if !defined(HAL_USE_EFL) || defined(__DOXYGEN__)
+#define HAL_USE_EFL                         ${doc.HAL_USE_EFL!"FALSE"}
 #endif
 
 /**
@@ -136,13 +136,6 @@
 #endif
 
 /**
- * @brief   Enables the QSPI subsystem.
- */
-#if !defined(HAL_USE_QSPI) || defined(__DOXYGEN__)
-#define HAL_USE_QSPI                        ${doc.HAL_USE_QSPI!"FALSE"}
-#endif
-
-/**
  * @brief   Enables the RTC subsystem.
  */
 #if !defined(HAL_USE_RTC) || defined(__DOXYGEN__)
@@ -171,10 +164,24 @@
 #endif
 
 /**
+ * @brief   Enables the SIO subsystem.
+ */
+#if !defined(HAL_USE_SIO) || defined(__DOXYGEN__)
+#define HAL_USE_SIO                         ${doc.HAL_USE_SIO!"FALSE"}
+#endif
+
+/**
  * @brief   Enables the SPI subsystem.
  */
 #if !defined(HAL_USE_SPI) || defined(__DOXYGEN__)
 #define HAL_USE_SPI                         ${doc.HAL_USE_SPI!"FALSE"}
+#endif
+
+/**
+ * @brief   Enables the TRNG subsystem.
+ */
+#if !defined(HAL_USE_TRNG) || defined(__DOXYGEN__)
+#define HAL_USE_TRNG                        ${doc.HAL_USE_TRNG!"FALSE"}
 #endif
 
 /**
@@ -196,6 +203,13 @@
  */
 #if !defined(HAL_USE_WDG) || defined(__DOXYGEN__)
 #define HAL_USE_WDG                         ${doc.HAL_USE_WDG!"FALSE"}
+#endif
+
+/**
+ * @brief   Enables the WSPI subsystem.
+ */
+#if !defined(HAL_USE_WSPI) || defined(__DOXYGEN__)
+#define HAL_USE_WSPI                        ${doc.HAL_USE_WSPI!"FALSE"}
 #endif
 
 /*===========================================================================*/
@@ -344,26 +358,6 @@
 #endif
 
 /*===========================================================================*/
-/* QSPI driver related settings.                                             */
-/*===========================================================================*/
-
-/**
- * @brief   Enables synchronous APIs.
- * @note    Disabling this option saves both code and data space.
- */
-#if !defined(QSPI_USE_WAIT) || defined(__DOXYGEN__)
-#define QSPI_USE_WAIT                       ${doc.QSPI_USE_WAIT!"TRUE"}
-#endif
-
-/**
- * @brief   Enables the @p qspiAcquireBus() and @p qspiReleaseBus() APIs.
- * @note    Disabling this option saves both code and data space.
- */
-#if !defined(QSPI_USE_MUTUAL_EXCLUSION) || defined(__DOXYGEN__)
-#define QSPI_USE_MUTUAL_EXCLUSION           ${doc.QSPI_USE_MUTUAL_EXCLUSION!"TRUE"}
-#endif
-
-/*===========================================================================*/
 /* SDC driver related settings.                                              */
 /*===========================================================================*/
 
@@ -475,7 +469,6 @@
 #define SPI_USE_CIRCULAR                    ${doc.SPI_USE_CIRCULAR!"FALSE"}
 #endif
 
-
 /**
  * @brief   Enables the @p spiAcquireBus() and @p spiReleaseBus() APIs.
  * @note    Disabling this option saves both code and data space.
@@ -522,6 +515,26 @@
  */
 #if !defined(USB_USE_WAIT) || defined(__DOXYGEN__)
 #define USB_USE_WAIT                        ${doc.USB_USE_WAIT!"FALSE"}
+#endif
+
+/*===========================================================================*/
+/* WSPI driver related settings.                                             */
+/*===========================================================================*/
+
+/**
+ * @brief   Enables synchronous APIs.
+ * @note    Disabling this option saves both code and data space.
+ */
+#if !defined(WSPI_USE_WAIT) || defined(__DOXYGEN__)
+#define WSPI_USE_WAIT                       ${doc.WSPI_USE_WAIT!"TRUE"}
+#endif
+
+/**
+ * @brief   Enables the @p wspiAcquireBus() and @p wspiReleaseBus() APIs.
+ * @note    Disabling this option saves both code and data space.
+ */
+#if !defined(WSPI_USE_MUTUAL_EXCLUSION) || defined(__DOXYGEN__)
+#define WSPI_USE_MUTUAL_EXCLUSION           ${doc.WSPI_USE_MUTUAL_EXCLUSION!"TRUE"}
 #endif
 
 #endif /* HALCONF_H */

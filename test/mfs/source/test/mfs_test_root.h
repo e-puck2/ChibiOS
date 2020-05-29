@@ -26,6 +26,7 @@
 
 #include "mfs_test_sequence_001.h"
 #include "mfs_test_sequence_002.h"
+#include "mfs_test_sequence_003.h"
 
 #if !defined(__DOXYGEN__)
 
@@ -46,7 +47,7 @@ extern "C" {
 /* Shared definitions.                                                       */
 /*===========================================================================*/
 
-#include "mfs.h"
+#include "hal_mfs.h"
 
 #define TEST_SUITE_NAME "ChibiOS/HAL MFS Test Suite"
 
@@ -55,6 +56,10 @@ extern "C" {
 extern const MFSConfig mfscfg1;
 extern MFSDriver mfs1;
 extern uint8_t mfs_buffer[512];
+extern const uint8_t mfs_pattern16[16];
+extern const uint8_t mfs_pattern32[32];
+extern const uint8_t mfs_pattern10[10];
+extern const uint8_t mfs_pattern512[512];
 
 flash_error_t bank_erase(mfs_bank_t bank);
 flash_error_t bank_verify_erased(mfs_bank_t bank);

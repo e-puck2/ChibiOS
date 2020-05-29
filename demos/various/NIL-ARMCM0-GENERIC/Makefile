@@ -69,6 +69,11 @@ ifeq ($(USE_FPU),)
   USE_FPU = no
 endif
 
+# FPU-related options.
+ifeq ($(USE_FPU_OPT),)
+  USE_FPU_OPT = -mfloat-abi=$(USE_FPU) -mfpu=fpv4-sp-d16
+endif
+
 #
 # Architecture or project specific options
 ##############################################################################
@@ -84,8 +89,8 @@ PROJECT = ch
 MCU  = cortex-m0
 
 # Imported source files and paths.
-CHIBIOS = ../../..
-CONFDIR  := .
+CHIBIOS  := ../../..
+CONFDIR  := ./cfg
 BUILDDIR := ./build
 DEPDIR   := ./.dep
 
@@ -97,7 +102,7 @@ include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32f0xx.m
 #include $(CHIBIOS)/os/hal/hal.mk
 #include $(CHIBIOS)/os/hal/ports/STM32/STM32F0xx/platform.mk
 #include $(CHIBIOS)/os/hal/boards/ST_STM32F072B_DISCOVERY/board.mk
-#include $(CHIBIOS)/os/hal/osal/nil/osal.mk
+#include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/nil/nil.mk
 include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk

@@ -49,7 +49,7 @@
 
 /**
  * @brief   Stack alignment constant.
- * @note    It is the alignement required for the stack pointer.
+ * @note    It is the alignment required for the stack pointer.
  */
 #define PORT_STACK_ALIGN                sizeof (stkalign_t)
 
@@ -332,7 +332,11 @@ struct port_context {
  * @note    @p id can be a function name or a vector number depending on the
  *          port implementation.
  */
+#ifdef __cplusplus
+#define PORT_IRQ_HANDLER(id) extern "C" bool id(void)
+#else
 #define PORT_IRQ_HANDLER(id) bool id(void)
+#endif
 
 /**
  * @brief   Fast IRQ handler function declaration.

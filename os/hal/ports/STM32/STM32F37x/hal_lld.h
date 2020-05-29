@@ -853,13 +853,16 @@
 #endif
 
 /* SDADC maximum frequency check.*/
-#if (STM32_ADC_USE_SDADC1 | STM32_ADC_USE_SDADC1 | STM32_ADC_USE_SDADC1) && \
-    (STM32_SDADCCLK > STM32_SDADCCLK_FAST_MAX)
+#if (STM32_ADC_USE_SDADC1 ||                                                \
+     STM32_ADC_USE_SDADC2 ||                                                \
+     STM32_ADC_USE_SDADC3) &&  (STM32_SDADCCLK > STM32_SDADCCLK_FAST_MAX)
 #error "STM32_SDADCCLK exceeding maximum frequency (STM32_SDADCCLK_FAST_MAX)"
 #endif
 
 /* SDADC minimum frequency check.*/
-#if (STM32_ADC_USE_SDADC1 | STM32_ADC_USE_SDADC1 | STM32_ADC_USE_SDADC1) && \
+#if (STM32_ADC_USE_SDADC1 ||                                                \
+     STM32_ADC_USE_SDADC2 ||                                                \
+     STM32_ADC_USE_SDADC3) && \
     (STM32_SDADCCLK < STM32_SDADCCLK_MIN)
 #error "STM32_SDADCCLK exceeding maximum frequency (STM32_SDADCCLK_MIN)"
 #endif
@@ -990,7 +993,9 @@
 #include "stm32_registry.h"
 #include "stm32_isr.h"
 #include "stm32_dma.h"
+#include "stm32_exti.h"
 #include "stm32_rcc.h"
+#include "stm32_tim.h"
 
 #ifdef __cplusplus
 extern "C" {

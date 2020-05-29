@@ -60,8 +60,9 @@
  */
 #define CH_CUSTOMER_LIC_RT                  TRUE
 #define CH_CUSTOMER_LIC_NIL                 TRUE
-#define CH_CUSTOMER_LIC_LIB                 TRUE
+#define CH_CUSTOMER_LIC_OSLIB               TRUE
 #define CH_CUSTOMER_LIC_EX                  TRUE
+#define CH_CUSTOMER_LIC_SB                  TRUE
 #define CH_CUSTOMER_LIC_PORT_CM0            TRUE
 #define CH_CUSTOMER_LIC_PORT_CM3            TRUE
 #define CH_CUSTOMER_LIC_PORT_CM4            TRUE

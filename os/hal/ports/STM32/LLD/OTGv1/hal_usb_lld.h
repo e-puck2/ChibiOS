@@ -110,20 +110,6 @@
 #endif
 
 /**
- * @brief   Dedicated data pump threads priority.
- */
-#if !defined(STM32_USB_OTG_THREAD_PRIO) || defined(__DOXYGEN__)
-#define STM32_USB_OTG_THREAD_PRIO           LOWPRIO
-#endif
-
-/**
- * @brief   Dedicated data pump threads stack size.
- */
-#if !defined(STM32_USB_OTG_THREAD_STACK_SIZE) || defined(__DOXYGEN__)
-#define STM32_USB_OTG_THREAD_STACK_SIZE     128
-#endif
-
-/**
  * @brief   Exception priority level during TXFIFOs operations.
  * @note    Because an undocumented silicon behavior the operation of
  *          copying a packet into a TXFIFO must not be interrupted by
@@ -239,7 +225,7 @@
 #define STM32_USBCLK                        STM32_PLL48CLK
 #elif defined(STM32F10X_CL)
 #define STM32_USBCLK                        STM32_OTGFSCLK
-#elif defined(STM32L4XX)
+#elif defined(STM32L4XX) || defined(STM32L4XXP)
 #define STM32_USBCLK                        STM32_48CLK
 #elif  defined(STM32H7XX)
 /* Defines directly STM32_USBCLK.*/
@@ -255,7 +241,8 @@
 #error "unsupported STM32 platform for OTG functionality"
 #endif
 
-#if STM32_USBCLK != 48000000
+/* Allowing for a small tolerance.*/
+#if STM32_USBCLK < 47880000 || STM32_USBCLK > 48120000
 #error "the USB OTG driver requires a 48MHz clock"
 #endif
 
@@ -527,26 +514,6 @@ struct USBDriver {
    * @brief   Pointer to the next address in the packet memory.
    */
   uint32_t                      pmnext;
-#if 0
-  /**
-   * @brief   Mask of TXFIFOs to be filled by the pump thread.
-   */
-  uint32_t                      txpending;
-  /**
-   * @brief   Pointer to the thread when it is sleeping or @p NULL.
-   */
-  thread_reference_t            wait;
-#if defined(_CHIBIOS_RT_)
-  /**
-   * @brief   Pointer to the thread.
-   */
-  thread_reference_t            tr;
-  /**
-   * @brief   Working area for the dedicated data pump thread;
-   */
-  THD_WORKING_AREA(wa_pump, STM32_USB_OTG_THREAD_STACK_SIZE);
-#endif
-#endif
 };
 
 /*===========================================================================*/
@@ -598,7 +565,7 @@ struct USBDriver {
  * @notapi
  */
 #define usb_lld_wakeup_host(usbp)                                           \
-  do{                                                                       \
+  do {                                                                      \
     (usbp)->otg->DCTL |= DCTL_RWUSIG;                                       \
     osalThreadSleepMilliseconds(STM32_USB_HOST_WAKEUP_DURATION);            \
     (usbp)->otg->DCTL &= ~DCTL_RWUSIG;                                      \
