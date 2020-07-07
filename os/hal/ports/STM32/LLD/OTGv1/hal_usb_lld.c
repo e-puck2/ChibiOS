@@ -307,6 +307,19 @@ static void otg_rxfifo_handler(USBDriver *usbp) {
                             usbp->epc[ep]->out_state->rxcnt);
     usbp->epc[ep]->out_state->rxbuf += cnt;
     usbp->epc[ep]->out_state->rxcnt += cnt;
+    /* 
+    Workaround to handle a communication terminated by a maxsize paquet
+    without the zero-length packet at the end. It only happens when we have a frame with a length
+    smaller than the transaction size set in the endpoint, terminated with a maxsize packet and without
+    a zero-length packet at the end (usbser driver of Windows for example).
+    We note the time and set a timeout and when it is due, we read the data to unlock the situation.
+    It happens in the SOF case of the USB interrupt.
+    */
+    if((cnt == usbp->epc[ep]->out_maxsize) && (usbp->epc[ep]->out_state->rxcnt < usbp->last_rxsize[ep])){
+      usbp->last_complete_frame_time[ep] = chVTGetSystemTimeX() + TIME_MS2I(10);
+    }else{
+      usbp->last_complete_frame_time[ep] = 0;
+    }
     break;
   case GRXSTSP_OUT_COMP:
     break;
@@ -537,6 +550,8 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
   sts &= otgp->GINTMSK;
   otgp->GINTSTS = sts;
 
+  static systime_t time = 0;
+
   /* Reset interrupt handling.*/
   if (sts & GINTSTS_USBRST) {
     /* Default reset action.*/
@@ -586,6 +601,18 @@ static void usb_lld_serve_interrupt(USBDriver *usbp) {
   /* SOF interrupt handling.*/
   if (sts & GINTSTS_SOF) {
     _usb_isr_invoke_sof_cb(usbp);
+     if(!(sts & GINTSTS_OEPINT)){
+      time = chVTGetSystemTimeX();
+      for(uint8_t i = 0 ; i < (USB_MAX_ENDPOINTS + 1) ; i++){
+        if((usbp->last_complete_frame_time[i] > 0) && (time > usbp->last_complete_frame_time[i]) ){
+          usbp->last_complete_frame_time[i] = 0;
+          //we bypass the otg_epout_handler() because the state of the internal 
+          //endpoint register doesn't indicate a complete transfer in this case
+          //we just need to read the buffer.
+          _usb_isr_invoke_out_cb(usbp, i);
+        }
+      }
+    }
   }
 
   /* Isochronous IN failed handling */
@@ -862,6 +889,12 @@ void usb_lld_start(USBDriver *usbp) {
 
     /* Global interrupts enable.*/
     otgp->GAHBCFG |= GAHBCFG_GINTMSK;
+
+    //we init some additional fields used by a workaround to handle
+    //when we don't have a ZLP frame.
+    for(uint8_t i = 0 ; i < (USB_MAX_ENDPOINTS + 1) ; i++){
+      usbp->last_complete_frame_time[i] = 0;
+    }
   }
 }
 
@@ -1147,6 +1180,8 @@ void usb_lld_start_out(USBDriver *usbp, usbep_t ep) {
   pcnt   = (osp->rxsize + usbp->epc[ep]->out_maxsize - 1U) /
            usbp->epc[ep]->out_maxsize;
   rxsize = (pcnt * usbp->epc[ep]->out_maxsize + 3U) & 0xFFFFFFFCU;
+
+  usbp->last_rxsize[ep] = rxsize;
 
   /*Setting up transaction parameters in DOEPTSIZ.*/
   usbp->otg->oe[ep].DOEPTSIZ = DOEPTSIZ_STUPCNT(3) | DOEPTSIZ_PKTCNT(pcnt) |
